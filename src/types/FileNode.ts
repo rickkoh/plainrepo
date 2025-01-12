@@ -21,3 +21,13 @@ export type FileNode = z.infer<typeof BaseFileNodeSchema> & {
   children?: z.infer<typeof FileNodesSchema>; // Recursive structure for children
 };
 export type FileNodes = z.infer<typeof FileNodesSchema>;
+
+// {
+//   name,
+//   path,
+//   string,
+//   type,
+//   selected,
+//   opened,
+//   children,
+// }

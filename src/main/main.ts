@@ -36,6 +36,7 @@ ipcMain.on('ipc-example', async (event, arg) => {
 
 // TODO: Rename the event to something more meaningful
 ipcMain.on('set-root-dir', async (event, arg) => {
+  // We will just do the brute force method first
   const directoryTree = getDirectoryTree(arg);
   console.log('returning directoryTree', directoryTree);
   event.reply('root-dir-set', directoryTree);
