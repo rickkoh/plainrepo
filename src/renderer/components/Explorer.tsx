@@ -34,6 +34,28 @@ function TreeNode({
       control={form.control}
       name={`${fieldString}.selected`}
       render={({ field }) => {
+        const handleOnCheckedChange = (checkedState: CheckedState) => {
+          const updateChildren = (node: FileNode, state: CheckedState) => {
+            if (node.type === 'directory' && node.children) {
+              node.children.forEach((child) => updateChildren(child, state));
+            } else {
+              form.setValue(`${fieldString}.selected`, state);
+            }
+          };
+
+          if (fileNode.type === 'directory' && fileNode.children) {
+            fileNode.children.forEach((child, index) => {
+              updateChildren(child, checkedState);
+              form.setValue(
+                `${fieldString}.children.${index}.selected`,
+                checkedState,
+              );
+            });
+          }
+
+          field.onChange(checkedState);
+        };
+
         return (
           <div
             key={fileNode.path}
@@ -48,7 +70,7 @@ function TreeNode({
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       checked={field.value}
-                      onCheckedChange={field.onChange}
+                      onCheckedChange={handleOnCheckedChange}
                     />
                     <Label
                       htmlFor="open"
