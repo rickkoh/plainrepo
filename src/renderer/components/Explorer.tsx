@@ -35,9 +35,19 @@ function TreeNode({
       name={`${fieldString}.selected`}
       render={({ field }) => {
         const handleOnCheckedChange = (checkedState: CheckedState) => {
-          const updateChildren = (node: FileNode, state: CheckedState) => {
+          const updateChildren = (
+            node: FileNode,
+            state: CheckedState,
+            childString: string,
+          ) => {
             if (node.type === 'directory' && node.children) {
-              node.children.forEach((child) => updateChildren(child, state));
+              node.children.forEach((child, index) =>
+                updateChildren(
+                  child,
+                  state,
+                  `${childString}.children.${index}`,
+                ),
+              );
             } else {
               form.setValue(`${fieldString}.selected`, state);
             }
@@ -45,7 +55,11 @@ function TreeNode({
 
           if (fileNode.type === 'directory' && fileNode.children) {
             fileNode.children.forEach((child, index) => {
-              updateChildren(child, checkedState);
+              updateChildren(
+                child,
+                checkedState,
+                `${fieldString}.children.${index}`,
+              );
               form.setValue(
                 `${fieldString}.children.${index}.selected`,
                 checkedState,
