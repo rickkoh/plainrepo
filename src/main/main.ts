@@ -12,11 +12,14 @@ import path from 'path';
 import { app, BrowserWindow, shell, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
+import { z } from 'zod';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
-import getDirectoryTree from './utils/DirectoryTree';
-import GetContent from './utils/ContentAggregator';
+import buildFileNode, { generateFileTree } from './utils/DirectoryTree';
+import getContent from './utils/ContentAggregator';
 import { FileNodeSchema } from '../types/FileNode';
+import TokenEstimator from './utils/TokenEstimator';
+import testFileNode from '../data/testFileNodes';
 
 class AppUpdater {
   constructor() {
@@ -30,6 +33,9 @@ let mainWindow: BrowserWindow | null = null;
 
 ipcMain.on('ipc-example', async (event, arg) => {
   const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
+  const test = generateFileTree(testFileNode);
+  console.log(testFileNode);
+  console.log(test);
   console.log(msgTemplate(arg));
   event.reply('ipc-example', msgTemplate('pong'));
 });
@@ -37,16 +43,38 @@ ipcMain.on('ipc-example', async (event, arg) => {
 // TODO: Rename the event to something more meaningful
 ipcMain.on('set-root-dir', async (event, arg) => {
   // We will just do the brute force method first
-  const directoryTree = getDirectoryTree(arg);
+  const directoryTree = buildFileNode(arg);
   console.log('returning directoryTree', directoryTree);
   event.reply('root-dir-set', directoryTree);
 });
 
 ipcMain.on('get-content', async (event, arg) => {
-  const fileNode = FileNodeSchema.parse(arg);
-  console.log('attempting to get-content', fileNode);
-  const content = GetContent(fileNode);
+  console.log('attempting to get-content');
+  const parsedResult = FileNodeSchema.safeParse(arg);
+  if (!parsedResult.success) {
+    event.reply('get-content', 'Failed to parse file node');
+    return;
+  }
+  const fileNode = parsedResult.data;
+  let content = '';
+  content += `${generateFileTree(fileNode)}\n`;
+  content += getContent(fileNode);
   event.reply('get-content', content);
+});
+
+ipcMain.on('get-token-count', async (event, arg) => {
+  console.log('attempting to get-token-count');
+  const parsedResult = z.string().safeParse(arg);
+  if (!parsedResult.success) {
+    event.reply('get-token-count', 'Failed to parse content');
+    return;
+  }
+
+  const content = parsedResult.data;
+
+  const tokenCount = TokenEstimator.estimateTokens(content);
+
+  event.reply('get-token-count', tokenCount);
 });
 
 if (process.env.NODE_ENV === 'production') {

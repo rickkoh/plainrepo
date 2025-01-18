@@ -6,7 +6,8 @@ export type Channels =
   | 'ipc-example'
   | 'set-root-dir'
   | 'root-dir-set'
-  | 'get-content';
+  | 'get-content'
+  | 'get-token-count';
 
 const electronHandler = {
   ipcRenderer: {
