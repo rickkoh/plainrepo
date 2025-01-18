@@ -5,7 +5,6 @@ export const BaseFileNodeSchema = z.object({
   path: z.string(),
   type: z.enum(['file', 'directory']),
   selected: z.boolean().optional(),
-  opened: z.boolean().optional(),
 });
 
 type BaseFileNode = z.infer<typeof BaseFileNodeSchema>;
@@ -17,17 +16,13 @@ export const FileNodeSchema: z.ZodType<BaseFileNode> =
 
 export const FileNodesSchema = z.array(FileNodeSchema);
 
-export type FileNode = z.infer<typeof BaseFileNodeSchema> & {
-  children?: z.infer<typeof FileNodesSchema>; // Recursive structure for children
+export type FileNode = {
+  name: string; // Name of the file or directory
+  path: string; // Path of the file or directory
+  type: 'file' | 'directory'; // Type: 'file' or 'directory'
+  selected?: boolean; // Optional: Whether the node is selected
+  children?: FileNode[]; // Optional: Recursive structure for children
 };
-export type FileNodes = z.infer<typeof FileNodesSchema>;
 
-// {
-//   name,
-//   path,
-//   string,
-//   type,
-//   selected,
-//   opened,
-//   children,
-// }
+// Type inference for an array of file nodes
+export type FileNodes = FileNode[];
