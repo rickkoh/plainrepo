@@ -1,4 +1,6 @@
-const testFileNode: any = {
+import { FileNode } from '../types/FileNode';
+
+const testFileNode: FileNode = {
   name: 'src',
   path: '/src',
   type: 'directory',
@@ -9,14 +11,6 @@ const testFileNode: any = {
       path: '/src/renderer',
       type: 'directory',
       selected: false,
-      children: [
-        {
-          name: 'toolbar.tsx',
-          path: '/src/renderer/toolbar.tsx',
-          type: 'file',
-          selected: false,
-        },
-      ],
     },
     {
       name: 'main',
