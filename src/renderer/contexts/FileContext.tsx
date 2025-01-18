@@ -1,8 +1,6 @@
 import {
   createContext,
-  Dispatch,
   PropsWithChildren,
-  SetStateAction,
   useCallback,
   useContext,
   useEffect,
@@ -14,12 +12,16 @@ import { FileNode, FileNodeSchema } from '../../types/FileNode';
 
 interface FileContextProps {
   rootDir?: string;
-  setRootDir: Dispatch<SetStateAction<string | undefined>>;
+  setRootDir: (path: string) => void;
   content?: string;
   workspace?: FileNode;
-  setRootDirr: (path: string) => void;
+  setWorkspace: (workspace: FileNode) => void;
+  autoSync?: boolean;
+  setAutoSync: (autoSync: boolean) => void;
   getContent: (fileNode: FileNode) => void;
   pingIpc: () => void;
+  tokenCount?: number;
+  setTokenCount: (tokenCount: number) => void;
 }
 
 export const FileContext = createContext<FileContextProps | undefined>(
@@ -46,36 +48,80 @@ interface FileProviderProps {}
 export default function FileProvider({
   children,
 }: PropsWithChildren<FileProviderProps>) {
-  const [rootDir, setRootDir] = useState<string>();
+  const [rootDir, _setRootDir] = useState<string>();
 
-  const [workspace, setWorkspace] = useState<FileNode>();
+  const [workspace, _setWorkspace] = useState<FileNode>();
 
-  const [content, setContent] = useState<string>();
+  const [content, _setContent] = useState<string>();
+
+  const [autoSync, _setAutoSync] = useState<boolean>();
+
+  const [tokenCount, setTokenCount] = useState<number>();
 
   const pingIpc = useCallback(() => {
     window.electron.ipcRenderer.sendMessage('ipc-example', ['ping']);
   }, []);
 
-  // TODO: Need to rename or integrate this into a better workflow
-  const setRootDirr = useCallback((path: string) => {
+  const setRootDir = useCallback((path: string) => {
     window.electron.ipcRenderer.sendMessage('set-root-dir', path);
+    _setRootDir(path);
   }, []);
 
   const getContent = useCallback((fileNode: FileNode) => {
     window.electron.ipcRenderer.sendMessage('get-content', fileNode);
   }, []);
 
+  const setWorkspace = useCallback(
+    (newWorkspace: FileNode) => {
+      _setWorkspace(newWorkspace);
+      if (autoSync) {
+        getContent(newWorkspace);
+      }
+    },
+    [autoSync, getContent],
+  );
+
+  const setContent = useCallback((contentToSet: string) => {
+    window.electron.ipcRenderer.sendMessage('get-token-count', contentToSet);
+    _setContent(contentToSet);
+  }, []);
+
+  const setAutoSync = useCallback(
+    (newAutoSync: boolean) => {
+      _setAutoSync(newAutoSync);
+      if (newAutoSync && workspace) {
+        getContent(workspace);
+      }
+    },
+    [workspace, getContent],
+  );
+
   const providerValue = useMemo(
     () => ({
       rootDir,
       setRootDir,
       workspace,
+      setWorkspace,
       content,
-      setRootDirr,
+      autoSync,
+      setAutoSync,
       getContent,
       pingIpc,
+      tokenCount,
+      setTokenCount,
     }),
-    [rootDir, workspace, content, pingIpc, setRootDirr, getContent],
+    [
+      rootDir,
+      setRootDir,
+      workspace,
+      setWorkspace,
+      content,
+      autoSync,
+      getContent,
+      setAutoSync,
+      pingIpc,
+      tokenCount,
+    ],
   );
 
   useEffect(() => {
@@ -94,8 +140,19 @@ export default function FileProvider({
       setContent(newContent);
     });
 
+    window.electron.ipcRenderer.on('get-token-count', (arg) => {
+      const parsedResult = z.number().safeParse(arg);
+      if (!parsedResult.success) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to parse token count', parsedResult.error);
+        return;
+      }
+      const token = parsedResult.data;
+      setTokenCount(token);
+    });
+
     // TODO: Cleanup the listeners
-  }, []);
+  }, [setWorkspace, setContent]);
 
   return (
     <FileContext.Provider value={providerValue}>

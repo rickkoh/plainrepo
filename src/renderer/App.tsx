@@ -13,11 +13,11 @@ import Toolbar from './components/Toolbar';
 
 function Hello() {
   return (
-    <main className="w-full h-screen overflow-hidden">
+    <main className="w-full h-screen overflow-hidden bg-background text-foreground">
       <FileProvider>
         <div className="flex flex-row w-full h-full">
           <ResizablePanelGroup direction="horizontal">
-            <ResizablePanel>
+            <ResizablePanel defaultSize={25} minSize={15} maxSize={40}>
               <Explorer />
             </ResizablePanel>
             <ResizableHandle />

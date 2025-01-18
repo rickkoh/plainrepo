@@ -1,3 +1,4 @@
+/* eslint-disable react/require-default-props */
 /* eslint-disable no-console */
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -13,21 +14,24 @@ import { cn } from '@/lib/utils';
 import { CheckedState } from '@radix-ui/react-checkbox';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { useDebounceCallback } from 'usehooks-ts';
+import { ChevronRight } from 'lucide-react';
+
 import { useFileContext } from '../contexts/FileContext';
 import { FileNode, FileNodeSchema } from '../../types/FileNode';
 
 function TreeNode({
   fileNode,
   form,
-  isRoot,
-  fieldString,
+  isRoot = false,
+  fieldString = '',
 }: {
   fileNode: FileNode;
   form: any;
   isRoot?: boolean;
   fieldString?: string;
 }) {
-  const [open, setOpen] = useState<CheckedState>(false);
+  const [open, setOpen] = useState<CheckedState>(isRoot ?? false);
 
   return (
     <FormField
@@ -48,21 +52,17 @@ function TreeNode({
                   `${childString}.children.${index}`,
                 ),
               );
-            } else {
-              form.setValue(`${fieldString}.selected`, state);
             }
+            form.setValue(`${childString}.selected`, state);
           };
 
+          // If file is a directory, start the recursion
           if (fileNode.type === 'directory' && fileNode.children) {
             fileNode.children.forEach((child, index) => {
               updateChildren(
                 child,
                 checkedState,
                 `${fieldString}.children.${index}`,
-              );
-              form.setValue(
-                `${fieldString}.children.${index}.selected`,
-                checkedState,
               );
             });
           }
@@ -73,15 +73,25 @@ function TreeNode({
         return (
           <div
             key={fileNode.path}
-            className="flex flex-col gap-4"
+            className="flex flex-col"
             style={{
               marginLeft: isRoot ? '' : '16px',
             }}
           >
-            <div className="flex flex-row space-x-2">
+            <div className="flex flex-row space-x-2 items-center">
               <FormItem>
                 <FormControl>
                   <div className="flex items-center space-x-2">
+                    <button
+                      type="button"
+                      className={cn(
+                        fileNode.type === 'file' &&
+                          'opacity-0 pointer-events-none',
+                      )}
+                      onClick={() => setOpen(!open)}
+                    >
+                      <ChevronRight className={cn(open && 'rotate-90')} />
+                    </button>
                     <Checkbox
                       checked={field.value}
                       onCheckedChange={handleOnCheckedChange}
@@ -96,9 +106,6 @@ function TreeNode({
                 </FormControl>
                 <FormMessage />
               </FormItem>
-              {fileNode.type === 'directory' && (
-                <Checkbox checked={open} onCheckedChange={setOpen} />
-              )}
             </div>
 
             <div className="flex flex-col gap-4">
@@ -123,14 +130,9 @@ function TreeNode({
   );
 }
 
-TreeNode.defaultProps = {
-  isRoot: false,
-  fieldString: '',
-};
-
 function Tree({
   workspace,
-  onStructureChange,
+  onStructureChange = () => {},
 }: {
   workspace: FileNode;
   onStructureChange?: (workspace: FileNode) => void;
@@ -139,9 +141,9 @@ function Tree({
     defaultValues: workspace,
   });
 
-  function onSubmit(values: any) {
-    console.log(values);
-  }
+  // function onSubmit(values: any) {
+  //   console.log(values);
+  // }
 
   useEffect(() => {
     if (onStructureChange) {
@@ -159,8 +161,8 @@ function Tree({
     // eslint-disable-next-line react/jsx-props-no-spreading
     <Form {...form}>
       <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className="w-full h-full p-4 overflow-x-scroll bg-zinc-100"
+        // onSubmit={form.handleSubmit(onSubmit)}
+        className="w-full h-full py-4 overflow-x-scroll bg-zinc-100"
       >
         <TreeNode fileNode={workspace} form={form} isRoot />
       </form>
@@ -168,12 +170,8 @@ function Tree({
   );
 }
 
-Tree.defaultProps = {
-  onStructureChange: () => {},
-};
-
 export default function Explorer() {
-  const { rootDir, setRootDir, workspace, setRootDirr, getContent } =
+  const { rootDir, setRootDir, workspace, setWorkspace, getContent, autoSync } =
     useFileContext();
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -192,25 +190,65 @@ export default function Explorer() {
   };
 
   const handleFolderSelect = (event: ChangeEvent<HTMLInputElement>) => {
-    // eslint-disable-next-line prefer-destructuring
-    const files = event.target.files;
-    // TODO: Refactor and beautify this
-    if (files && files.length > 0) {
-      const split = files[0].path.split('/');
-      const nrootDir = split.filter((v, i) => i !== split.length - 1).join('/');
-      setRootDir(nrootDir);
-      setRootDirr(nrootDir);
-    } else {
+    const { files } = event.target;
+
+    if (!files || files.length === 0) {
       setRootDir('');
+      return;
     }
+
+    // Get all paths
+    const paths = Array.from(files).map((file) =>
+      file.webkitRelativePath ? file.webkitRelativePath : file.path,
+    );
+
+    console.log(paths);
+
+    // Derive the root directory by taking the common prefix
+    const commonRootPath = paths.reduce((commonPath, currentPath) => {
+      const normalizedCommonPath = commonPath.replace(/\\/g, '/');
+      const normalizedCurrentPath = currentPath.replace(/\\/g, '/');
+      const commonSegments = normalizedCommonPath.split('/');
+      const currentSegments = normalizedCurrentPath.split('/');
+      const common = [];
+
+      for (
+        let i = 0;
+        i < Math.min(commonSegments.length, currentSegments.length);
+        // eslint-disable-next-line no-plusplus
+        i++
+      ) {
+        if (commonSegments[i] === currentSegments[i]) {
+          common.push(commonSegments[i]);
+        } else {
+          break;
+        }
+      }
+
+      return common.join('/');
+    }, paths[0]);
+
+    setRootDir(commonRootPath);
   };
+
+  const debounceGetContent = useDebounceCallback(getContent, 1000);
 
   return (
     <div className="w-full h-full p-4 overflow-x-scroll bg-zinc-100">
-      <pre className="whitespace-pre-wrap">Path: {JSON.stringify(rootDir)}</pre>
+      <button type="button" onClick={handleClick}>
+        <pre className="whitespace-nowrap">Path: {JSON.stringify(rootDir)}</pre>
+      </button>
 
       {workspace && (
-        <Tree workspace={workspace} onStructureChange={getContent} />
+        <Tree
+          workspace={workspace}
+          onStructureChange={(dir) => {
+            setWorkspace(dir);
+            if (autoSync) {
+              debounceGetContent(dir);
+            }
+          }}
+        />
       )}
 
       {workspace && (
@@ -234,16 +272,15 @@ export default function Explorer() {
           >
             Open Workspace
           </Button>
-
-          <input
-            ref={inputRef}
-            type="file"
-            multiple
-            onChange={handleFolderSelect}
-            className="hidden"
-          />
         </div>
       )}
+      <input
+        ref={inputRef}
+        type="file"
+        multiple
+        onChange={handleFolderSelect}
+        className="hidden"
+      />
     </div>
   );
 }

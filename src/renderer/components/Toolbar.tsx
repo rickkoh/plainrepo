@@ -5,27 +5,43 @@
  * @returns Toolbar
  */
 
-/**
- * TODO
- * Change to icons
- * Make it draggable
- */
+import { cn } from '@/lib/utils';
+import { useCopyToClipboard } from 'usehooks-ts';
+import { Button } from '@/components/ui/button';
+import { useFileContext } from '../contexts/FileContext';
+
 export default function Toolbar() {
+  const { autoSync, setAutoSync, content, tokenCount } = useFileContext();
+
+  const [, copy] = useCopyToClipboard();
+
   return (
     <div className="fixed bottom-8 right-8">
       <div className="flex flex-row gap-4 p-2 bg-zinc-200 rounded-md justify-center">
-        <button type="button" className="px-2 py-1 bg-red-200">
-          T
-        </button>
         <button type="button" className="px-2 py-1">
-          D
+          {tokenCount} Tokens
         </button>
-        <button type="button" className="px-2 py-1">
-          I
+        <button
+          type="button"
+          className={cn('px-2 py-1')}
+          onClick={() => {
+            setAutoSync(!autoSync);
+          }}
+        >
+          Autosync {autoSync ? 'on' : 'off'}
         </button>
-        <button type="button" className="px-2 py-1">
-          C
-        </button>
+        <Button
+          variant="default"
+          type="button"
+          className="px-2 py-1"
+          onClick={() => {
+            if (content) {
+              copy(content);
+            }
+          }}
+        >
+          Copy
+        </Button>
       </div>
     </div>
   );
