@@ -251,16 +251,6 @@ export default function Explorer() {
         />
       )}
 
-      {workspace && (
-        <button
-          type="button"
-          className="px-4 py-2 text-white bg-green-700 rounded-md"
-          onClick={() => getContent(workspace)}
-        >
-          Get Content
-        </button>
-      )}
-
       {!workspace && (
         <div className="flex flex-col gap-4">
           <p>No workspace selected</p>
