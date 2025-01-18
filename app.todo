@@ -1,0 +1,30 @@
+Features:
+  ✔ Display tree @started(25-01-18 22:29) @done(25-01-19 00:34) @lasted(2h5m51s)
+    ✔ Test tree @done(25-01-19 00:34)
+    ✔ Add tree to content @done(25-01-19 00:34)
+  ☐ Fs handle try catch
+  ☐ Loading while fs is reading
+  ☐ Settings page
+    ☐ Auto get tokens (Improve performance)
+    ☐ Ignore folders/files
+    ☐ Darkmode
+  ☐ Optimise fs for larger directory
+  ☐ UI improvements
+    ☐ Icons
+    ☐ State
+    ☐ Current path
+    ☐ Hover effects
+  ☐ Menu
+    ☐ File (open)
+  ☐ Copy entire content
+  ☐ Better content formatting
+    ☐ Indentation
+    ☐ Line numbers
+
+  ☐ Darkmode
+
+Bugs:
+  ☐ If all is selected, parent checkmark should be checked
+
+Performance:
+  ☐ DFS to change selected should have some pruning functions
