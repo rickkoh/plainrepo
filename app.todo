@@ -3,6 +3,11 @@ Features:
     ✔ Test tree @done(25-01-19 00:34)
     ✔ Add tree to content @done(25-01-19 00:34)
   ☐ Fs handle try catch
+  ☐ Search
+    ☐ Search for file
+    ☐ Goto file
+    ☐ Search for content
+    ☐ Jump to content
   ☐ Loading while fs is reading
   ☐ Settings page
     ☐ Auto get tokens (Improve performance)
@@ -17,14 +22,23 @@ Features:
   ☐ Menu
     ☐ File (open)
   ☐ Copy entire content
-  ☐ Better content formatting
+  ☐ Content
     ☐ Indentation
     ☐ Line numbers
+  ☐ Collapse hide and show only selected files
+  ☐ Save state
 
   ☐ Darkmode
 
+Landing Page:
+  ☐ Open source link
+  ☐ Github link
+  ☐ Landing page
+  ☐ Download button
+  ☐ Donate button
+
 Bugs:
-  ☐ If all is selected, parent checkmark should be checked
+  ☐ If one is selected, parent checkmark should be checked
 
 Performance:
   ☐ DFS to change selected should have some pruning functions
