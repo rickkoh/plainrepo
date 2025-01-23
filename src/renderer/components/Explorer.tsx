@@ -199,7 +199,7 @@ export default function Explorer() {
 
     // Get all paths
     const paths = Array.from(files).map((file) =>
-      file.webkitRelativePath ? file.webkitRelativePath : file.path,
+      file.webkitRelativePath ? file.path : file.path,
     );
 
     console.log(paths);
