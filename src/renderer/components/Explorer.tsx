@@ -10,12 +10,12 @@ import {
   FormItem,
   FormMessage,
 } from '@/components/ui/form';
-import { cn } from '@/lib/utils';
+import { cn, processIncrements } from '@/lib/utils';
 import { CheckedState } from '@radix-ui/react-checkbox';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useDebounceCallback } from 'usehooks-ts';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Settings } from 'lucide-react';
 
 import { useFileContext } from '../contexts/FileContext';
 import { FileNode, FileNodeSchema } from '../../types/FileNode';
@@ -66,6 +66,16 @@ function TreeNode({
               );
             });
           }
+
+          if (checkedState) {
+            form.setValue(`.selected`, checkedState);
+            processIncrements(fieldString, (prefix: string) => {
+              console.log('Prefix:', prefix);
+              form.setValue(`${prefix}.selected`, checkedState);
+            });
+          }
+
+          console.log('Printing fieldString:', fieldString);
 
           field.onChange(checkedState);
         };
@@ -234,7 +244,7 @@ export default function Explorer() {
   const debounceGetContent = useDebounceCallback(getContent, 1000);
 
   return (
-    <div className="w-full h-full p-4 overflow-x-scroll bg-zinc-100">
+    <div className="relative w-full h-screen p-4 overflow-hidden bg-zinc-100 flex flex-col items-start">
       <button type="button" onClick={handleClick}>
         <pre className="whitespace-nowrap">Path: {JSON.stringify(rootDir)}</pre>
       </button>
@@ -249,16 +259,6 @@ export default function Explorer() {
             }
           }}
         />
-      )}
-
-      {workspace && (
-        <button
-          type="button"
-          className="px-4 py-2 text-white bg-green-700 rounded-md"
-          onClick={() => getContent(workspace)}
-        >
-          Get Content
-        </button>
       )}
 
       {!workspace && (
@@ -281,6 +281,12 @@ export default function Explorer() {
         onChange={handleFolderSelect}
         className="hidden"
       />
+
+      <div className="mt-auto" />
+
+      <Button type="button">
+        <Settings />
+      </Button>
     </div>
   );
 }
