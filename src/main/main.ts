@@ -15,11 +15,15 @@ import log from 'electron-log';
 import { z } from 'zod';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
-import buildFileNode, { generateFileTree } from './utils/DirectoryTree';
+import {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  buildFileNode,
+  buildFileNode1,
+  generateFileTree,
+} from './utils/DirectoryTree';
 import getContent from './utils/ContentAggregator';
 import { FileNodeSchema } from '../types/FileNode';
 import TokenEstimator from './utils/TokenEstimator';
-import testFileNode from '../data/testFileNodes';
 
 class AppUpdater {
   constructor() {
@@ -33,9 +37,6 @@ let mainWindow: BrowserWindow | null = null;
 
 ipcMain.on('ipc-example', async (event, arg) => {
   const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
-  const test = generateFileTree(testFileNode);
-  console.log(testFileNode);
-  console.log(test);
   console.log(msgTemplate(arg));
   event.reply('ipc-example', msgTemplate('pong'));
 });
@@ -43,7 +44,14 @@ ipcMain.on('ipc-example', async (event, arg) => {
 // TODO: Rename the event to something more meaningful
 ipcMain.on('set-root-dir', async (event, arg) => {
   // We will just do the brute force method first
-  const directoryTree = buildFileNode(arg);
+  console.log('Setting root dir');
+  // Start measuring time
+  const start = Date.now();
+  // Call the function
+  const directoryTree = buildFileNode1(arg);
+  // End measuring time
+  const timeTaken = Date.now() - start;
+  console.log('Time taken:', timeTaken);
   console.log('returning directoryTree', directoryTree);
   event.reply('root-dir-set', directoryTree);
 });

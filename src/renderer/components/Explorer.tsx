@@ -16,6 +16,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useDebounceCallback } from 'usehooks-ts';
 import { ChevronRight, Settings } from 'lucide-react';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 import { useFileContext } from '../contexts/FileContext';
 import { FileNode, FileNodeSchema } from '../../types/FileNode';
@@ -41,43 +42,33 @@ function TreeNode({
       name={`${fieldString}.selected`}
       render={({ field }) => {
         const handleOnCheckedChange = (checkedState: CheckedState) => {
-          const updateChildren = (
-            node: FileNode,
-            state: CheckedState,
-            childString: string,
-          ) => {
+          const applySelection = (node: FileNode, state: CheckedState) => {
             if (node.type === 'directory' && node.children) {
-              node.children.forEach((child, index) =>
-                updateChildren(
-                  child,
-                  state,
-                  `${childString}.children.${index}`,
-                ),
-              );
+              node.children.forEach((child) => {
+                applySelection(child, state);
+              });
             }
-            form.setValue(`${childString}.selected`, state);
+            const checked: boolean = state === 'indeterminate' ? false : state;
+            node.selected = checked;
           };
 
-          // If file is a directory, start the recursion
-          if (fileNode.type === 'directory' && fileNode.children) {
-            fileNode.children.forEach((child, index) => {
-              updateChildren(
-                child,
-                checkedState,
-                `${fieldString}.children.${index}`,
-              );
-            });
+          if (fileNode !== undefined) {
+            applySelection(fileNode, checkedState);
           }
 
+          if (fieldString === '') {
+            form.reset(fileNode);
+          } else {
+            form.setValue(`${fieldString}`, fileNode);
+          }
+
+          // Update parents
           if (checkedState) {
             form.setValue(`.selected`, checkedState);
             processIncrements(fieldString, (prefix: string) => {
-              console.log('Prefix:', prefix);
               form.setValue(`${prefix}.selected`, checkedState);
             });
           }
-
-          console.log('Printing fieldString:', fieldString);
 
           field.onChange(checkedState);
         };
@@ -118,15 +109,15 @@ function TreeNode({
             </div>
 
             <div className="flex flex-col gap-4">
-              {fileNode.type === 'directory' && (
-                <div className={cn(open || 'hidden')}>
+              {fileNode.type === 'directory' && open && (
+                <div>
                   {fileNode.children &&
                     fileNode.children.map((child, index) => (
                       <TreeNode
                         key={child.path}
                         fileNode={child}
                         form={form}
-                        fieldString={`${fieldString}.children.${index}`}
+                        fieldString={`${fieldString}${isRoot ? '' : '.'}children.${index}`}
                         level={level + 1}
                       />
                     ))}
@@ -147,18 +138,15 @@ function Tree({
   workspace: FileNode;
   onStructureChange?: (workspace: FileNode) => void;
 }) {
-  const form = useForm<FileNode>({
-    defaultValues: workspace,
-  });
+  const form = useForm<FileNode>({ resolver: zodResolver(FileNodeSchema) });
 
-  // function onSubmit(values: any) {
-  //   console.log(values);
-  // }
+  useEffect(() => {
+    form.reset(workspace);
+  }, [form, workspace]);
 
   useEffect(() => {
     if (onStructureChange) {
       const subscription = form.watch((values) => {
-        // TODO: There should be no need to parse the file values
         const fileNode = FileNodeSchema.parse(values);
         onStructureChange(fileNode);
       });
@@ -264,7 +252,7 @@ export default function Explorer() {
       )}
 
       {!workspace && (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 p-4">
           <p>No workspace selected</p>
 
           <Button

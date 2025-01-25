@@ -17,7 +17,7 @@ function Hello() {
       <FileProvider>
         <div className="flex flex-row w-full h-full">
           <ResizablePanelGroup direction="horizontal">
-            <ResizablePanel defaultSize={25} minSize={15} maxSize={40}>
+            <ResizablePanel defaultSize={30} minSize={15} maxSize={60}>
               <Explorer />
             </ResizablePanel>
             <ResizableHandle />

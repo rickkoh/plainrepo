@@ -681,10 +681,6 @@ body {
   height: 100%;
 }
 
-.h-max {
-  height: max-content;
-}
-
 .h-screen {
   height: 100vh;
 }
@@ -823,11 +819,6 @@ body {
   background-color: hsl(var(--primary));
 }
 
-.bg-red-200 {
-  --tw-bg-opacity: 1;
-  background-color: rgb(254 202 202 / var(--tw-bg-opacity, 1));
-}
-
 .bg-secondary {
   background-color: hsl(var(--secondary));
 }
@@ -846,12 +837,12 @@ body {
   padding: 0.5rem;
 }
 
-.p-4 {
-  padding: 1rem;
-}
-
 .p-8 {
   padding: 2rem;
+}
+
+.p-4 {
+  padding: 1rem;
 }
 
 .px-2 {
@@ -1029,6 +1020,11 @@ body {
 
 .hover\:bg-secondary\/80:hover {
   background-color: hsl(var(--secondary) / 0.8);
+}
+
+.hover\:bg-zinc-200:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(228 228 231 / var(--tw-bg-opacity, 1));
 }
 
 .hover\:text-accent-foreground:hover {
