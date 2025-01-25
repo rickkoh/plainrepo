@@ -39,6 +39,7 @@ Landing Page:
 
 Bugs:
   ☐ If one is selected, parent checkmark should be checked
+  ☐ ZodError when changing directory
 
 Performance:
   ☐ DFS to change selected should have some pruning functions
