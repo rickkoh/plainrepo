@@ -25,11 +25,13 @@ function TreeNode({
   form,
   isRoot = false,
   fieldString = '',
+  level = 1,
 }: {
   fileNode: FileNode;
   form: any;
   isRoot?: boolean;
   fieldString?: string;
+  level?: number;
 }) {
   const [open, setOpen] = useState<CheckedState>(isRoot ?? false);
 
@@ -81,14 +83,11 @@ function TreeNode({
         };
 
         return (
-          <div
-            key={fileNode.path}
-            className="flex flex-col"
-            style={{
-              marginLeft: isRoot ? '' : '16px',
-            }}
-          >
-            <div className="flex flex-row space-x-2 items-center">
+          <div key={fileNode.path} className="flex flex-col">
+            <div
+              className="flex flex-row space-x-2 items-center hover:bg-zinc-200"
+              style={{ paddingLeft: `${level * 16}px` }}
+            >
               <FormItem>
                 <FormControl>
                   <div className="flex items-center space-x-2">
@@ -128,6 +127,7 @@ function TreeNode({
                         fileNode={child}
                         form={form}
                         fieldString={`${fieldString}.children.${index}`}
+                        level={level + 1}
                       />
                     ))}
                 </div>
@@ -244,9 +244,11 @@ export default function Explorer() {
   const debounceGetContent = useDebounceCallback(getContent, 1000);
 
   return (
-    <div className="relative w-full h-screen p-4 overflow-hidden bg-zinc-100 flex flex-col items-start">
+    <div className="relative w-full h-screen py-4 overflow-hidden bg-zinc-100 flex flex-col items-start">
       <button type="button" onClick={handleClick}>
-        <pre className="whitespace-nowrap">Path: {JSON.stringify(rootDir)}</pre>
+        <pre className="whitespace-nowrap px-4">
+          Path: {JSON.stringify(rootDir)}
+        </pre>
       </button>
 
       {workspace && (
