@@ -35,9 +35,14 @@ Features:
   ☐ Darkmode
 
 Landing Page:
+  ☐ Release first version of the app
   ☐ Open source link
   ☐ Github link
   ☐ Landing page
+    ☐ Birdseye view of your repository
+    ☐ For you to: Pick, Copy, Search
+    ☐ Have control over what to pick: Ignore folders/files/keywords
+    ☐ Feed the right context to AI models at your fingertips
   ☐ Download button
   ☐ Donate button
 
@@ -47,7 +52,7 @@ Bugs:
   ☐ Add tailwind to gitignore, ignore in build
 
 Performance:
-  ☐ Improve initial load time when figuring out root path
+  ☐ Improve initial load time when figuring out root path @started(25-01-28 14:08)
   ✔ Optimise fs for larger directory @done(25-01-27 00:04)
   ✔ DFS to change selected should have some pruning functions @done(25-01-27 00:04)
   ✔ Form set value to have batch update instead of individual @done(25-01-26 23:48)
