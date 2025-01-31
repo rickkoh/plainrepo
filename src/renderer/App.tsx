@@ -6,10 +6,10 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from '@/components/ui/resizable';
-import Explorer from './components/Explorer';
 import FileProvider from './contexts/FileContext';
 import Viewer from './components/Viewer';
 import Toolbar from './components/Toolbar';
+import Sidebar from './components/Sidebar';
 
 function Hello() {
   return (
@@ -18,7 +18,7 @@ function Hello() {
         <div className="flex flex-row w-full h-full">
           <ResizablePanelGroup direction="horizontal">
             <ResizablePanel defaultSize={30} minSize={15} maxSize={60}>
-              <Explorer />
+              <Sidebar />
             </ResizablePanel>
             <ResizableHandle />
             <ResizablePanel>
