@@ -75,38 +75,37 @@ function TreeNode({
 
         return (
           <div key={fileNode.path} className="flex flex-col">
-            <div
-              className="flex flex-row items-center space-x-2 hover:bg-zinc-200"
-              style={{ paddingLeft: `${level * 16}px` }}
-            >
-              <FormItem>
-                <FormControl>
-                  <div className="flex items-center space-x-2">
-                    <button
-                      type="button"
-                      className={cn(
-                        fileNode.type === 'file' &&
-                          'opacity-0 pointer-events-none',
-                      )}
-                      onClick={() => setOpen(!open)}
-                    >
-                      <ChevronRight className={cn(open && 'rotate-90')} />
-                    </button>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={handleOnCheckedChange}
-                    />
-                    <Label
-                      htmlFor="open"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      {fileNode.name}
-                    </Label>
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            </div>
+            <FormItem>
+              <FormControl>
+                <div
+                  className="flex flex-row items-center space-x-2 hover:bg-accent"
+                  style={{ paddingLeft: `${level * 16}px` }}
+                >
+                  <button
+                    type="button"
+                    className={cn(
+                      fileNode.type === 'file' &&
+                        'opacity-0 pointer-events-none',
+                    )}
+                    onClick={() => setOpen(!open)}
+                  >
+                    <ChevronRight className={cn(open && 'rotate-90')} />
+                  </button>
+                  <Checkbox
+                    id={fileNode.path}
+                    checked={field.value}
+                    onCheckedChange={handleOnCheckedChange}
+                  />
+                  <Label
+                    htmlFor={fileNode.path}
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    {fileNode.name}
+                  </Label>
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
 
             <div className="flex flex-col gap-4">
               {fileNode.type === 'directory' && open && (
@@ -160,7 +159,7 @@ function Tree({
     <Form {...form}>
       <form
         // onSubmit={form.handleSubmit(onSubmit)}
-        className="w-full h-full py-4 overflow-x-scroll bg-zinc-100"
+        className="w-full h-full py-4 overflow-x-scroll bg-background"
       >
         <TreeNode fileNode={workspace} form={form} isRoot />
       </form>
@@ -232,7 +231,7 @@ export default function Explorer() {
   const debounceGetContent = useDebounceCallback(getContent, 1000);
 
   return (
-    <div className="flex flex-col items-start w-full h-screen py-2 overflow-hidden bg-background">
+    <div className="flex flex-col items-start w-full h-full max-h-screen py-2 overflow-hidden bg-background">
       <pre className="px-4 whitespace-nowrap text-sm">
         Explorer: {JSON.stringify(rootDir)}
       </pre>
@@ -253,7 +252,7 @@ export default function Explorer() {
         <div className="flex flex-col gap-4 p-4">
           <Button
             type="button"
-            className="px-4 py-2 text-white bg-green-700 rounded-md"
+            className="px-4 py-2 text-primary-foreground bg-primary rounded-md"
             onClick={handleClick}
           >
             Open Folder

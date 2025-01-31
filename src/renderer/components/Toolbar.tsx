@@ -17,7 +17,7 @@ export default function Toolbar() {
 
   return (
     <div className="fixed bottom-8 right-8">
-      <div className="flex flex-row gap-4 p-2 bg-zinc-200 rounded-md justify-center">
+      <div className="flex flex-row gap-4 p-2 bg-accent rounded-md justify-center">
         <button type="button" className="px-2 py-1">
           {tokenCount} Tokens
         </button>
