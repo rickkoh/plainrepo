@@ -30,6 +30,9 @@ Features:
     ☐ Line numbers
   ☐ Collapse hide and show only selected files
   ☐ Save state
+  ☐ Tabs feature, open multiple tabs.
+    ☐ Each tab with it's set of opened files
+
 
   ☐ Add 'Consolas' font
   ☐ Darkmode
@@ -52,6 +55,7 @@ Bugs:
   ☐ Add tailwind to gitignore, ignore in build
 
 Performance:
+  ☐ Able to cancel "opening file" when autoSync is on
   ☐ Improve initial load time when figuring out root path @started(25-01-28 14:08)
   ✔ Optimise fs for larger directory @done(25-01-27 00:04)
   ✔ DFS to change selected should have some pruning functions @done(25-01-27 00:04)
