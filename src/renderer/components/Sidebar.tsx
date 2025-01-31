@@ -16,14 +16,14 @@ export default function Sidebar() {
       value={activeTab}
       className="flex flex-row w-full h-full"
     >
-      <TabsList className="flex flex-col justify-start h-full p-0 w-fit border-r border-zinc-300">
+      <TabsList className="flex flex-col justify-start h-full p-0 w-fit border-r border-border rounded-none">
         <button
           type="button"
           onClick={() => setActiveTab('explorer')}
           className={cn(
-            'border-l-2 py-4 px-2 text-zinc-500',
-            'hover:text-zinc-800',
-            activeTab === 'explorer' && 'text-zinc-800 border-zinc-800',
+            'border-l-2 border-background py-4 px-2 text-muted-foreground',
+            'hover:text-foreground',
+            activeTab === 'explorer' && 'text-foreground border-foreground',
           )}
         >
           <Files />
@@ -32,9 +32,9 @@ export default function Sidebar() {
           type="button"
           onClick={() => setActiveTab('search')}
           className={cn(
-            'border-l-2 py-4 px-2 text-zinc-500',
-            'hover:text-zinc-800',
-            activeTab === 'search' && 'text-zinc-800 border-zinc-800',
+            'border-l-2 border-background py-4 px-2 text-muted-foreground',
+            'hover:text-foreground',
+            activeTab === 'search' && 'text-foreground border-foreground',
           )}
         >
           <SearchIcon />
@@ -43,9 +43,9 @@ export default function Sidebar() {
           type="button"
           onClick={() => setActiveTab('settings')}
           className={cn(
-            'border-l-2 py-4 px-2 text-zinc-500 mt-auto',
-            'hover:text-zinc-800',
-            activeTab === 'settings' && 'text-zinc-800 border-zinc-800',
+            'border-l-2 border-background py-4 px-2 text-muted-foreground mt-auto',
+            'hover:text-foreground',
+            activeTab === 'settings' && 'text-foreground border-foreground',
           )}
         >
           <SettingsIcon />

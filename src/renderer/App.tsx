@@ -13,7 +13,7 @@ import Sidebar from './components/Sidebar';
 
 function Hello() {
   return (
-    <main className="w-full h-screen overflow-hidden bg-background text-foreground">
+    <main className="relative w-full h-screen overflow-hidden bg-background text-foreground">
       <FileProvider>
         <div className="flex flex-row w-full h-full">
           <ResizablePanelGroup direction="horizontal">
