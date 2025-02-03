@@ -14,7 +14,6 @@ import { cn, processIncrements } from '@/lib/utils';
 import { CheckedState } from '@radix-ui/react-checkbox';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { useDebounceCallback } from 'usehooks-ts';
 import { ChevronRight } from 'lucide-react';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -131,23 +130,23 @@ function TreeNode({
 }
 
 function Tree({
-  workspace,
+  fileNode,
   onStructureChange = () => {},
 }: {
-  workspace: FileNode;
-  onStructureChange?: (workspace: FileNode) => void;
+  fileNode: FileNode;
+  onStructureChange?: (fileNode: FileNode) => void;
 }) {
   const form = useForm<FileNode>({ resolver: zodResolver(FileNodeSchema) });
 
   useEffect(() => {
-    form.reset(workspace);
-  }, [form, workspace]);
+    form.reset(fileNode);
+  }, [form, fileNode]);
 
   useEffect(() => {
     if (onStructureChange) {
       const subscription = form.watch((values) => {
-        const fileNode = FileNodeSchema.parse(values);
-        onStructureChange(fileNode);
+        const tempFileNode = FileNodeSchema.parse(values);
+        onStructureChange(tempFileNode);
       });
       return () => subscription.unsubscribe();
     }
@@ -157,48 +156,49 @@ function Tree({
   return (
     // eslint-disable-next-line react/jsx-props-no-spreading
     <Form {...form}>
-      <form
-        // onSubmit={form.handleSubmit(onSubmit)}
-        className="w-full h-full py-4 overflow-x-scroll bg-background"
-      >
-        <TreeNode fileNode={workspace} form={form} isRoot />
+      <form className="w-full h-full py-4 overflow-x-scroll bg-background">
+        <TreeNode fileNode={fileNode} form={form} isRoot />
       </form>
     </Form>
   );
 }
 
 export default function Explorer() {
-  const { rootDir, setRootDir, workspace, setWorkspace, getContent, autoSync } =
-    useFileContext();
+  const {
+    workingDir,
+    setWorkingDir,
+    fileNode,
+    setFileNode,
+    getContent,
+    autoSync,
+  } = useFileContext();
 
   const handleClick = async () => {
     const folder = await window.electron.ipcRenderer.selectFolder();
     if (folder) {
-      setRootDir(folder);
+      setWorkingDir(folder);
     }
   };
 
-  const debounceGetContent = useDebounceCallback(getContent, 1000);
-
   return (
-    <div className="flex flex-col items-start w-full h-full max-h-screen py-2 overflow-hidden bg-background">
+    <div className="flex flex-col items-start w-full h-full max-h-screen pt-4 overflow-hidden bg-background">
       <pre className="px-4 whitespace-nowrap text-sm">
-        Explorer: {JSON.stringify(rootDir)}
+        Explorer: {JSON.stringify(workingDir)}
       </pre>
 
-      {workspace && (
+      {fileNode && (
         <Tree
-          workspace={workspace}
+          fileNode={fileNode}
           onStructureChange={(dir) => {
-            setWorkspace(dir);
+            setFileNode(dir);
             if (autoSync) {
-              debounceGetContent(dir);
+              getContent(dir);
             }
           }}
         />
       )}
 
-      {!workspace && (
+      {!fileNode && (
         <div className="flex flex-col gap-4 p-4">
           <Button
             type="button"

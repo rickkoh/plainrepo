@@ -7,19 +7,25 @@ import Search from './Search';
 import Explorer from './Explorer';
 import Settings from './Settings';
 
+enum Tab {
+  ExplorerTab = 'explorer',
+  SearchTab = 'search',
+  SettingsTab = 'settings',
+}
+
 export default function Sidebar() {
-  const [activeTab, setActiveTab] = useState('explorer');
+  const [activeTab, setActiveTab] = useState(Tab.ExplorerTab);
 
   return (
     <Tabs
-      defaultValue="account"
+      defaultValue={activeTab}
       value={activeTab}
       className="flex flex-row w-full h-full"
     >
       <TabsList className="flex flex-col justify-start h-full p-0 w-fit border-r border-border rounded-none">
         <button
           type="button"
-          onClick={() => setActiveTab('explorer')}
+          onClick={() => setActiveTab(Tab.ExplorerTab)}
           className={cn(
             'border-l-2 border-background py-4 px-2 text-muted-foreground',
             'hover:text-foreground',
@@ -30,7 +36,7 @@ export default function Sidebar() {
         </button>
         <button
           type="button"
-          onClick={() => setActiveTab('search')}
+          onClick={() => setActiveTab(Tab.SearchTab)}
           className={cn(
             'border-l-2 border-background py-4 px-2 text-muted-foreground',
             'hover:text-foreground',
@@ -41,7 +47,7 @@ export default function Sidebar() {
         </button>
         <button
           type="button"
-          onClick={() => setActiveTab('settings')}
+          onClick={() => setActiveTab(Tab.SettingsTab)}
           className={cn(
             'border-l-2 border-background py-4 px-2 text-muted-foreground mt-auto',
             'hover:text-foreground',

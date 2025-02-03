@@ -11,11 +11,11 @@ import { z } from 'zod';
 import { FileNode, FileNodeSchema } from '../../types/FileNode';
 
 interface FileContextProps {
-  rootDir?: string;
-  setRootDir: (path: string) => void;
+  workingDir?: string;
+  setWorkingDir: (path: string) => void;
   content?: string;
-  workspace?: FileNode;
-  setWorkspace: (workspace: FileNode) => void;
+  fileNode?: FileNode;
+  setFileNode: (fileNode: FileNode) => void;
   autoSync?: boolean;
   setAutoSync: (autoSync: boolean) => void;
   getContent: (fileNode: FileNode) => void;
@@ -28,29 +28,14 @@ export const FileContext = createContext<FileContextProps | undefined>(
   undefined,
 );
 
-/**
- * Send the rootDir to ipc
- * Ipc will read the directory using fs and send the files back in a specific format, let's call this format fileNode
- * Users can select the file they want to view and the fileNode will be sent back to the ipcMain
- * ipcMain will read the file and send the content back to the ipcRenderer
- * Everytime this happens we first start by doing the bruteforce method- read the file one by one and send the content back
- * In future we can optimize this by reading the file in chunks and sending the content back in chunks
- * Or we can first find the difference of the selected file and the previous file and send only the difference
- * renderer -> select root -> fs returns structure -> renderer renders structure
- * -> renderer selects file -> [ipcRenderer sends fileNode -> ipcMain reads file -> ipcMain sends content](this part can be optimised)
- * -> ipcRenderer receives content -> renderer renders content
- * @param param
- * @returns
- */
-
 interface FileProviderProps {}
 
 export default function FileProvider({
   children,
 }: PropsWithChildren<FileProviderProps>) {
-  const [rootDir, _setRootDir] = useState<string>();
+  const [workingDir, _setWorkingDir] = useState<string>();
 
-  const [workspace, _setWorkspace] = useState<FileNode>();
+  const [fileNode, _setFileNode] = useState<FileNode>();
 
   const [content, _setContent] = useState<string>();
 
@@ -62,20 +47,20 @@ export default function FileProvider({
     window.electron.ipcRenderer.sendMessage('ipc-example', ['ping']);
   }, []);
 
-  const setRootDir = useCallback((path: string) => {
+  const setWorkingDir = useCallback((path: string) => {
     window.electron.ipcRenderer.sendMessage('set-root-dir', path);
-    _setRootDir(path);
+    _setWorkingDir(path);
   }, []);
 
-  const getContent = useCallback((fileNode: FileNode) => {
-    window.electron.ipcRenderer.sendMessage('get-content', fileNode);
+  const getContent = useCallback((tempFileNode: FileNode) => {
+    window.electron.ipcRenderer.sendMessage('get-content', tempFileNode);
   }, []);
 
-  const setWorkspace = useCallback(
-    (newWorkspace: FileNode) => {
-      _setWorkspace(newWorkspace);
+  const setFileNode = useCallback(
+    (tempFileNode: FileNode) => {
+      _setFileNode(tempFileNode);
       if (autoSync) {
-        getContent(newWorkspace);
+        getContent(tempFileNode);
       }
     },
     [autoSync, getContent],
@@ -89,19 +74,19 @@ export default function FileProvider({
   const setAutoSync = useCallback(
     (newAutoSync: boolean) => {
       _setAutoSync(newAutoSync);
-      if (newAutoSync && workspace) {
-        getContent(workspace);
+      if (newAutoSync && fileNode) {
+        getContent(fileNode);
       }
     },
-    [workspace, getContent],
+    [fileNode, getContent],
   );
 
   const providerValue = useMemo(
     () => ({
-      rootDir,
-      setRootDir,
-      workspace,
-      setWorkspace,
+      workingDir,
+      setWorkingDir,
+      fileNode,
+      setFileNode,
       content,
       autoSync,
       setAutoSync,
@@ -111,10 +96,10 @@ export default function FileProvider({
       setTokenCount,
     }),
     [
-      rootDir,
-      setRootDir,
-      workspace,
-      setWorkspace,
+      workingDir,
+      setWorkingDir,
+      fileNode,
+      setFileNode,
       content,
       autoSync,
       getContent,
@@ -131,8 +116,8 @@ export default function FileProvider({
     });
 
     window.electron.ipcRenderer.on('root-dir-set', (arg) => {
-      const fileNode = FileNodeSchema.parse(arg);
-      setWorkspace(fileNode);
+      const newFileNode = FileNodeSchema.parse(arg);
+      setFileNode(newFileNode);
     });
 
     window.electron.ipcRenderer.on('get-content', (arg) => {
@@ -152,7 +137,7 @@ export default function FileProvider({
     });
 
     // TODO: Cleanup the listeners
-  }, [setWorkspace, setContent]);
+  }, [setFileNode, setContent]);
 
   return (
     <FileContext.Provider value={providerValue}>
