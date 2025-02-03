@@ -181,9 +181,10 @@ export default function Explorer() {
   }, []);
 
   const handleClick = () => {
-    if (inputRef.current) {
-      inputRef.current.click();
-    }
+    window.electron.ipcRenderer.selectFolder();
+    // if (inputRef.current) {
+    //   inputRef.current.click();
+    // }
   };
 
   const handleFolderSelect = (event: ChangeEvent<HTMLInputElement>) => {
