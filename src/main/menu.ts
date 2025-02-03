@@ -86,7 +86,13 @@ export default class MenuBuilder {
     };
     const subMenuFile: DarwinMenuItemConstructorOptions = {
       label: 'File',
-      submenu: [{ label: 'Open', accelerator: 'Command+P', selector: 'undo:' }],
+      submenu: [
+        {
+          label: 'Open',
+          accelerator: 'Command+P',
+          selector: 'dialog:openDirectory',
+        },
+      ],
     };
     const subMenuEdit: DarwinMenuItemConstructorOptions = {
       label: 'Edit',

@@ -1,6 +1,6 @@
 /* eslint-disable react/require-default-props */
 /* eslint-disable no-console */
-import { ChangeEvent, useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useForm } from 'react-hook-form';
 import {
@@ -171,62 +171,11 @@ export default function Explorer() {
   const { rootDir, setRootDir, workspace, setWorkspace, getContent, autoSync } =
     useFileContext();
 
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.setAttribute('directory', '');
-      inputRef.current.setAttribute('webkitdirectory', '');
+  const handleClick = async () => {
+    const folder = await window.electron.ipcRenderer.selectFolder();
+    if (folder) {
+      setRootDir(folder);
     }
-  }, []);
-
-  const handleClick = () => {
-    window.electron.ipcRenderer.selectFolder();
-    // if (inputRef.current) {
-    //   inputRef.current.click();
-    // }
-  };
-
-  const handleFolderSelect = (event: ChangeEvent<HTMLInputElement>) => {
-    const { files } = event.target;
-
-    if (!files || files.length === 0) {
-      setRootDir('');
-      return;
-    }
-
-    // Get all paths
-    const paths = Array.from(files).map((file) =>
-      file.webkitRelativePath ? file.path : file.path,
-    );
-
-    console.log(paths);
-
-    // Derive the root directory by taking the common prefix
-    const commonRootPath = paths.reduce((commonPath, currentPath) => {
-      const normalizedCommonPath = commonPath.replace(/\\/g, '/');
-      const normalizedCurrentPath = currentPath.replace(/\\/g, '/');
-      const commonSegments = normalizedCommonPath.split('/');
-      const currentSegments = normalizedCurrentPath.split('/');
-      const common = [];
-
-      for (
-        let i = 0;
-        i < Math.min(commonSegments.length, currentSegments.length);
-        // eslint-disable-next-line no-plusplus
-        i++
-      ) {
-        if (commonSegments[i] === currentSegments[i]) {
-          common.push(commonSegments[i]);
-        } else {
-          break;
-        }
-      }
-
-      return common.join('/');
-    }, paths[0]);
-
-    setRootDir(commonRootPath);
   };
 
   const debounceGetContent = useDebounceCallback(getContent, 1000);
@@ -260,13 +209,6 @@ export default function Explorer() {
           </Button>
         </div>
       )}
-      <input
-        ref={inputRef}
-        type="file"
-        multiple
-        onChange={handleFolderSelect}
-        className="hidden"
-      />
     </div>
   );
 }

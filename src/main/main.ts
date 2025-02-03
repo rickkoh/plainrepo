@@ -18,7 +18,6 @@ import { resolveHtmlPath } from './util';
 import {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   buildFileNode,
-  buildFileNode1,
   generateFileTree,
 } from './utils/DirectoryTree';
 import getContent from './utils/ContentAggregator';
@@ -48,7 +47,7 @@ ipcMain.on('set-root-dir', async (event, arg) => {
   // Start measuring time
   const start = Date.now();
   // Call the function
-  const directoryTree = buildFileNode1(arg);
+  const directoryTree = buildFileNode(arg);
   // End measuring time
   const timeTaken = Date.now() - start;
   console.log('Time taken:', timeTaken);
@@ -160,8 +159,6 @@ const createWindow = async () => {
       properties: ['openDirectory'],
     });
     if (!canceled) {
-      console.log('Selected filepaths:', filePaths);
-      console.log('Selected directory:', filePaths[0]);
       return filePaths[0];
     }
     return null;
