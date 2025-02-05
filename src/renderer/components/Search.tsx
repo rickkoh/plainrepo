@@ -5,22 +5,6 @@ import { CheckedState } from '@radix-ui/react-checkbox';
 
 import { useFileContext } from '../contexts/FileContext';
 
-/**
- * When you change the filter string, we can't necessary remove the fileNode from the tree because it might be selected.
- * Even if it is not selected, we can't remove it because it might be a parent of a selected node.
- * 1.
- * We can have a separate fileNode, and then as we search, we build the second file node, or just a flatlist with the path to the node.
- * And then if someone selects it, we traverse our main node and select all the nodes in the path.
- * To do this, we need to have the path of the node in the nodeitself.
- * The path is from the root, then the children, we need to specify the index of the child.
- * Traverse until we finally get to the node.
- * 2. instead of making it flat, we render the tree for only those nodes that match the filter.
- * Then again, if we do this, we also have to expand all the nodes.
- * Only those nodes who itself or their children match the filter will be shown.
- *
- * In terms of User Experience, which option is better?
- */
-
 interface SearchedFileNode extends BaseFileNode {
   numberPath: number[];
 }
@@ -28,17 +12,19 @@ interface SearchedFileNode extends BaseFileNode {
 export default function Search() {
   const { fileNode, setFileNode } = useFileContext();
 
-  const [filterName, _setFilterName] = useState<string>();
+  const [filterName, _setFilterName] = useState<string>('');
 
   const [searchedFileNodes, setSearchedFileNodes] =
     useState<SearchedFileNode[]>();
+
+  const [selectAll, setSelectAll] = useState<CheckedState>(false);
 
   const setFilterName = useCallback(
     (tempFilterName: string) => {
       _setFilterName(tempFilterName);
 
       if (tempFilterName === '') {
-        setSearchedFileNodes(undefined);
+        setSearchedFileNodes([]);
         return;
       }
 
@@ -48,13 +34,12 @@ export default function Search() {
 
       const tempSearchedFileNodes: SearchedFileNode[] = [];
 
-      const traverse = (node: FileNode, numberPath: number[]) => {
+      const traverse = async (node: FileNode, numberPath: number[]) => {
         if (node.children === undefined) {
           return;
         }
 
-        for (let i = 0; i < node.children.length; i += 1) {
-          const child = node.children[i];
+        node.children.forEach(async (child, i) => {
           const tempNumberPath = [...numberPath, i];
 
           if (
@@ -68,8 +53,8 @@ export default function Search() {
             tempSearchedFileNodes.push(searchedFileNode);
           }
 
-          traverse(child, tempNumberPath);
-        }
+          await traverse(child, tempNumberPath);
+        });
       };
 
       traverse(fileNode, []);
@@ -127,30 +112,45 @@ export default function Search() {
       <p className="px-4 text-sm">Search</p>
       <div className="flex flex-col space-y-2 px-4">
         <input
-          className="border border-foreground focus:rounded-none"
+          className="border bg-background text-foreground placeholder:text-foreground border-accent focus:rounded-none px-1"
+          placeholder="Search for file"
           value={filterName}
           onChange={(e) => setFilterName(e.target.value)}
         />
       </div>
-      <div className="flex flex-col">
+      <div>
         {searchedFileNodes && searchedFileNodes.length > 0 ? (
-          searchedFileNodes.map((searchedFileNode, index) => (
-            <div
-              key={searchedFileNode.name}
-              className="flex flex-row items-center space-x-2 hover:bg-accent px-4"
-            >
-              <Checkbox
-                id={searchedFileNode.path}
-                checked={searchedFileNode.selected}
-                onCheckedChange={(checked) =>
-                  handleOnCheckedChange(checked, index, searchedFileNode)
-                }
-              />
-              <label htmlFor={searchedFileNode.path}>
-                {searchedFileNode.name}
-              </label>
+          <div className="flex flex-col space-y-2">
+            <div className="flex flex-row items-center space-x-2 px-4">
+              <button
+                type="button"
+                className="border-b border-foreground text-sm"
+                onClick={() => setSelectAll(selectAll)}
+              >
+                Select all
+              </button>
             </div>
-          ))
+            {searchedFileNodes.map((searchedFileNode, index) => (
+              <div
+                key={searchedFileNode.path}
+                className="flex flex-row items-center space-x-2 hover:bg-accent px-4"
+              >
+                <Checkbox
+                  id={searchedFileNode.path}
+                  checked={searchedFileNode.selected}
+                  onCheckedChange={(checked) =>
+                    handleOnCheckedChange(checked, index, searchedFileNode)
+                  }
+                />
+                <label htmlFor={searchedFileNode.path}>
+                  {searchedFileNode.name}
+                </label>
+                <p className="text-muted-foreground text-sm">
+                  {searchedFileNode.path}
+                </p>
+              </div>
+            ))}
+          </div>
         ) : (
           <p className="px-4 text-sm">No results found</p>
         )}

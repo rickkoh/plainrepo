@@ -1,11 +1,18 @@
 import { Tabs, TabsContent, TabsList } from '@/components/ui/tabs';
-import { Files, Search as SearchIcon, SettingsIcon } from 'lucide-react';
+import {
+  Files,
+  Moon,
+  Search as SearchIcon,
+  SettingsIcon,
+  Sun,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 
 import Search from './Search';
 import Explorer from './Explorer';
 import Settings from './Settings';
+import { useAppContext } from '../contexts/AppContext';
 
 enum Tab {
   ExplorerTab = 'explorer',
@@ -14,6 +21,7 @@ enum Tab {
 }
 
 export default function Sidebar() {
+  const { isDarkMode, toggleDarkMode } = useAppContext();
   const [activeTab, setActiveTab] = useState(Tab.ExplorerTab);
 
   return (
@@ -47,9 +55,20 @@ export default function Sidebar() {
         </button>
         <button
           type="button"
-          onClick={() => setActiveTab(Tab.SettingsTab)}
+          onClick={() => toggleDarkMode()}
           className={cn(
             'border-l-2 border-background py-4 px-2 text-muted-foreground mt-auto',
+            'hover:text-foreground',
+            // activeTab === 'settings' && 'text-foreground border-foreground',
+          )}
+        >
+          {isDarkMode ? <Sun /> : <Moon />}
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab(Tab.SettingsTab)}
+          className={cn(
+            'border-l-2 border-background py-4 px-2 text-muted-foreground',
             'hover:text-foreground',
             activeTab === 'settings' && 'text-foreground border-foreground',
           )}
@@ -57,13 +76,25 @@ export default function Sidebar() {
           <SettingsIcon />
         </button>
       </TabsList>
-      <TabsContent value="explorer" className="w-full h-full mt-0">
+      <TabsContent
+        value="explorer"
+        forceMount
+        className="w-full h-full mt-0 data-[state=inactive]:hidden"
+      >
         <Explorer />
       </TabsContent>
-      <TabsContent value="search" className="w-full h-full mt-0">
+      <TabsContent
+        value="search"
+        forceMount
+        className="w-full h-full mt-0 data-[state=inactive]:hidden"
+      >
         <Search />
       </TabsContent>
-      <TabsContent value="settings" className="w-full h-full mt-0">
+      <TabsContent
+        value="settings"
+        forceMount
+        className="w-full h-full mt-0 data-[state=inactive]:hidden"
+      >
         <Settings />
       </TabsContent>
     </Tabs>

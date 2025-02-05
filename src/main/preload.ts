@@ -7,7 +7,8 @@ export type Channels =
   | 'set-root-dir'
   | 'root-dir-set'
   | 'get-content'
-  | 'get-token-count';
+  | 'get-token-count'
+  | 'toggle-dark-mode';
 
 const electronHandler = {
   ipcRenderer: {
@@ -26,6 +27,7 @@ const electronHandler = {
     once(channel: Channels, func: (...args: unknown[]) => void) {
       ipcRenderer.once(channel, (_event, ...args) => func(...args));
     },
+    readUserData: () => ipcRenderer.invoke('userData:read'),
     selectFolder: () => ipcRenderer.invoke('dialog:openDirectory'),
   },
 };

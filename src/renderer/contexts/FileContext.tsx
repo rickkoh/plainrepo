@@ -15,6 +15,7 @@ import {
 } from '../../types/FileNode';
 
 interface FileContextProps {
+  workingDirName?: string;
   workingDir?: string;
   setWorkingDir: (path: string) => void;
   content?: string;
@@ -53,6 +54,10 @@ export default function FileProvider({
   const [tokenCount, setTokenCount] = useState<number>();
 
   const [filterName, setFilterName] = useState<string>();
+
+  const workingDirName = useMemo(() => {
+    return workingDir ? workingDir.split('/').pop() : '';
+  }, [workingDir]);
 
   const pingIpc = useCallback(() => {
     window.electron.ipcRenderer.sendMessage('ipc-example', ['ping']);
@@ -108,6 +113,7 @@ export default function FileProvider({
 
   const providerValue = useMemo(
     () => ({
+      workingDirName,
       workingDir,
       setWorkingDir,
       fileNode,
@@ -123,6 +129,7 @@ export default function FileProvider({
       setTokenCount,
     }),
     [
+      workingDirName,
       workingDir,
       setWorkingDir,
       fileNode,

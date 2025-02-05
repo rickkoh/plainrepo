@@ -28,25 +28,26 @@
   }
 
   .dark {
-    --background: 224 71% 4%;
-    --foreground: 213 31% 91%;
-    --muted: 223 47% 11%;
-    --muted-foreground: 215.4 16.3% 56.9%;
-    --accent: 216 34% 17%;
-    --accent-foreground: 210 40% 98%;
-    --popover: 224 71% 4%;
-    --popover-foreground: 215 20.2% 65.1%;
-    --border: 216 34% 17%;
-    --input: 216 34% 17%;
-    --card: 224 71% 4%;
-    --card-foreground: 213 31% 91%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 1.2%;
-    --secondary: 222.2 47.4% 11.2%;
-    --secondary-foreground: 210 40% 98%;
-    --destructive: 0 63% 31%;
+    --background: 42 30% 10%;
+    --foreground: 46 63% 90%;
+    --muted: 42 30% 15%;
+    --muted-foreground: 42 33% 75%;
+    --popover: 0 0% 12%;
+    --popover-foreground: 222.2 47.4% 90%;
+    --card: 0 0% 12%;
+    --card-foreground: 46 63% 90%;
+    --border: 42 30% 20%;
+    --input: 42 30% 20%;
+    --primary: 120 47.4% 30%;
+    --primary-foreground: 120 47.7% 92%;
+    --secondary: 120 40% 25%;
+    --secondary-foreground: 120 47.4% 90%;
+    --accent: 42 30% 35%;
+    --accent-foreground: 222.2 47.4% 90%;
+    --destructive: 2 72% 40%;
     --destructive-foreground: 210 40% 98%;
-    --ring: 216 34% 17%;
+    --ring: 7.2 30% 30%;
+    --radius: 0.5rem;
   }
 }
 
@@ -66,4 +67,13 @@
 body {
   padding: 0px;
   margin: 0px;
+}
+
+* {
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+  scrollbar-width: none; /* Firefox */
+}
+
+*::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
 }

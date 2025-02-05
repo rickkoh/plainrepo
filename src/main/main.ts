@@ -23,6 +23,7 @@ import {
 import getContent from './utils/ContentAggregator';
 import { FileNodeSchema } from '../types/FileNode';
 import TokenEstimator from './utils/TokenEstimator';
+import { readUserData, writeUserData } from './utils/UserData';
 
 class AppUpdater {
   constructor() {
@@ -82,6 +83,21 @@ ipcMain.on('get-token-count', async (event, arg) => {
   const tokenCount = TokenEstimator.estimateTokens(content);
 
   event.reply('get-token-count', tokenCount);
+});
+
+ipcMain.on('toggle-dark-mode', async (event, arg) => {
+  console.log('attempting to toggle-dark-mode', arg);
+
+  // TODO: Set literal true to arg. Ensure arg is a boolean
+  if (arg) {
+    writeUserData({ darkMode: true });
+  } else {
+    writeUserData({ darkMode: false });
+  }
+
+  if (mainWindow) {
+    mainWindow.webContents.send('toggle-dark-mode', arg);
+  }
 });
 
 if (process.env.NODE_ENV === 'production') {
@@ -162,6 +178,13 @@ const createWindow = async () => {
       return filePaths[0];
     }
     return null;
+  });
+
+  ipcMain.handle('userData:read', async () => {
+    if (!mainWindow) {
+      return null;
+    }
+    return readUserData();
   });
 
   const menuBuilder = new MenuBuilder(mainWindow);
