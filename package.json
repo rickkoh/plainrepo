@@ -1,36 +1,31 @@
 {
-  "name": "electron-react-boilerplate",
-  "description": "A foundation for scalable desktop apps",
+  "name": "plainrepo",
+  "description": "Plain text view of your repository",
   "keywords": [
-    "electron",
-    "boilerplate",
+    "plaintext",
     "react",
     "typescript",
-    "ts",
-    "sass",
-    "webpack",
-    "hot",
-    "reload"
+    "ts"
   ],
-  "homepage": "https://github.com/electron-react-boilerplate/electron-react-boilerplate#readme",
+  "homepage": "https://plainrepo.com",
   "bugs": {
-    "url": "https://github.com/electron-react-boilerplate/electron-react-boilerplate/issues"
+    "url": "https://plainrepo.com"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/electron-react-boilerplate/electron-react-boilerplate.git"
+    "url": "git+https://github.com/rickkoh/plainrepo.git"
   },
   "license": "MIT",
   "author": {
-    "name": "Electron React Boilerplate Maintainers",
+    "name": "Plainrepo Maintainers",
     "email": "rick.kohjiaxuan@gmail.com",
-    "url": "https://electron-react-boilerplate.js.org"
+    "url": "https://plainrepo.com"
   },
   "contributors": [
     {
-      "name": "Amila Welihinda",
-      "email": "amilajack@gmail.com",
-      "url": "https://github.com/amilajack"
+      "name": "Rick Koh",
+      "email": "rick.kohjiaxuan@gmail.com",
+      "url": "https://github.com/rickkoh"
     }
   ],
   "main": "./.erb/dll/main.bundle.dev.js",
@@ -253,12 +248,12 @@
     ],
     "publish": {
       "provider": "github",
-      "owner": "electron-react-boilerplate",
-      "repo": "electron-react-boilerplate"
+      "owner": "plainrepo",
+      "repo": "plainrepo"
     }
   },
   "collective": {
-    "url": "https://opencollective.com/electron-react-boilerplate-594"
+    "url": "https://plainrepo.com"
   },
   "devEngines": {
     "runtime": {
