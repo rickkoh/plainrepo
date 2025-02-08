@@ -16,5 +16,10 @@ export function readAppSettings(): AppSettings {
 }
 
 export function writeAppSettings(appSettings: AppSettings) {
-  fs.writeFileSync(USER_DATA_PATH, JSON.stringify(appSettings));
+  try {
+    const safeAppSettings = AppSettingsSchema.parse(appSettings);
+    fs.writeFileSync(USER_DATA_PATH, JSON.stringify(safeAppSettings));
+  } catch (error) {
+    console.warn('Failed to write app settings', error);
+  }
 }

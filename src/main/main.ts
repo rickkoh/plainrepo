@@ -52,7 +52,7 @@ ipcMain.on('set-root-dir', async (event, arg) => {
   // End measuring time
   const timeTaken = Date.now() - start;
   console.log('Time taken:', timeTaken);
-  console.log('returning directoryTree', directoryTree);
+  // console.log('returning directoryTree', directoryTree);
   event.reply('root-dir-set', directoryTree);
 });
 
@@ -98,6 +98,11 @@ ipcMain.on('toggle-dark-mode', async (event, arg) => {
   if (mainWindow) {
     mainWindow.webContents.send('toggle-dark-mode', arg);
   }
+});
+
+ipcMain.on('set-app-settings', async (event, arg) => {
+  console.log('attempting to write-user-data', arg);
+  writeAppSettings(arg);
 });
 
 if (process.env.NODE_ENV === 'production') {

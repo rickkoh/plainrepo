@@ -16,9 +16,9 @@ Features:
     ☐ Jump to content
   ☐ Loading while fs is reading
   ☐ Settings page
-    ☐ Ignore folders/files
+    ✔ Ignore folders/files @done(25-02-10 01:27)
     ☐ Insert .gitignore
-    ☐ Darkmode
+    ✔ Darkmode @done(25-02-10 01:27)
   ☐ UI improvements
     ☐ Explorer
     ☐ Icons

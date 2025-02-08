@@ -1,16 +1,19 @@
 import { Dirent } from 'node:fs';
 import { FileNode, FileNodes } from '../../types/FileNode';
+import { readAppSettings } from './AppSettings';
 
 /* eslint-disable no-console */
 const fs = require('fs');
 const path = require('path');
 
-export function buildFileNode(rootDir: string, ignore?: string): FileNode {
-  const ignorePatterns = ignore
-    ? ignore.split(',').map((pattern) => pattern.trim())
-    : [];
+export function buildFileNode(rootDir: string): FileNode {
+  const appSettings = readAppSettings();
 
-  const ignoreRegexes = ignorePatterns.map((pattern) => {
+  const excludePatterns = appSettings.exclude || [];
+
+  console.log('Excluding patterns:', excludePatterns);
+
+  const excludeRegexes = excludePatterns.map((pattern) => {
     const regexString = pattern
       .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
       .replace(/\*/g, '.*');
@@ -18,8 +21,8 @@ export function buildFileNode(rootDir: string, ignore?: string): FileNode {
     return new RegExp(`^${regexString}$`);
   });
 
-  function shouldIgnore(filename: string): boolean {
-    return ignoreRegexes.some((regex) => regex.test(filename));
+  function shouldExclude(filename: string): boolean {
+    return excludeRegexes.some((regex) => regex.test(filename));
   }
 
   function readDir(currentPath: string): FileNodes {
@@ -27,7 +30,7 @@ export function buildFileNode(rootDir: string, ignore?: string): FileNode {
 
     return entries
       .filter((entry: Dirent) => {
-        return !shouldIgnore(entry.name);
+        return !shouldExclude(entry.name);
       })
       .map((entry: Dirent) => {
         const fullPath = path.join(currentPath, entry.name);

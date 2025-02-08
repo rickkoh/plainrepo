@@ -1,8 +1,11 @@
 import { z } from 'zod';
 
+export const ExcludeSchema = z.array(z.string());
+
 export const AppSettingsSchema = z.object({
   darkMode: z.boolean().optional(),
-  ignore: z.array(z.string()).optional(),
+  exclude: ExcludeSchema.optional(),
 });
 
 export type AppSettings = z.infer<typeof AppSettingsSchema>;
+export type Exclude = z.infer<typeof ExcludeSchema>;

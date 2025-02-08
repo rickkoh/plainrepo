@@ -8,6 +8,7 @@ export type Channels =
   | 'root-dir-set'
   | 'get-content'
   | 'get-token-count'
+  | 'set-app-settings'
   | 'toggle-dark-mode';
 
 const electronHandler = {
