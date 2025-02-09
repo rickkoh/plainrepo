@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { UserDataSchema } from '@/src/types/UserData';
+import { AppSettingsSchema } from '@/src/types/AppSettings';
 import {
   createContext,
   PropsWithChildren,
@@ -41,7 +41,7 @@ export default function AppProvider({
     window.electron.ipcRenderer
       .readUserData()
       .then((userData) => {
-        const tempUserData = UserDataSchema.parse(userData);
+        const tempUserData = AppSettingsSchema.parse(userData);
         setIsDarkMode(tempUserData.darkMode ?? false);
         return null;
       })

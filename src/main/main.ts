@@ -23,7 +23,7 @@ import {
 import getContent from './utils/ContentAggregator';
 import { FileNodeSchema } from '../types/FileNode';
 import TokenEstimator from './utils/TokenEstimator';
-import { readUserData, writeUserData } from './utils/UserData';
+import { readAppSettings, writeAppSettings } from './utils/AppSettings';
 
 class AppUpdater {
   constructor() {
@@ -90,9 +90,9 @@ ipcMain.on('toggle-dark-mode', async (event, arg) => {
 
   // TODO: Set literal true to arg. Ensure arg is a boolean
   if (arg) {
-    writeUserData({ darkMode: true });
+    writeAppSettings({ darkMode: true });
   } else {
-    writeUserData({ darkMode: false });
+    writeAppSettings({ darkMode: false });
   }
 
   if (mainWindow) {
@@ -184,7 +184,7 @@ const createWindow = async () => {
     if (!mainWindow) {
       return null;
     }
-    return readUserData();
+    return readAppSettings();
   });
 
   const menuBuilder = new MenuBuilder(mainWindow);

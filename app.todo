@@ -17,6 +17,7 @@ Features:
   ☐ Loading while fs is reading
   ☐ Settings page
     ☐ Ignore folders/files
+    ☐ Insert .gitignore
     ☐ Darkmode
   ☐ UI improvements
     ☐ Explorer
