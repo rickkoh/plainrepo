@@ -28,6 +28,9 @@ const electronHandler = {
     once(channel: Channels, func: (...args: unknown[]) => void) {
       ipcRenderer.once(channel, (_event, ...args) => func(...args));
     },
+    off(channel: Channels, func: (...args: unknown[]) => void) {
+      ipcRenderer.removeListener(channel, func);
+    },
     readUserData: () => ipcRenderer.invoke('userData:read'),
     selectFolder: () => ipcRenderer.invoke('dialog:openDirectory'),
   },
