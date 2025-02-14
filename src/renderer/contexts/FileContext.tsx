@@ -8,11 +8,7 @@ import {
   useState,
 } from 'react';
 import { z } from 'zod';
-import {
-  FileNode,
-  FileContentNode,
-  FileNodeSchema,
-} from '../../types/FileNode';
+import { FileNode, FileNodeSchema } from '../../types/FileNode';
 
 interface FileContextProps {
   workingDirName?: string;
@@ -44,9 +40,6 @@ export default function FileProvider({
 
   const [fileNode, _setFileNode] = useState<FileNode>();
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [fileContentNode, _setFileContentNode] = useState<FileContentNode>();
-
   const [content, _setContent] = useState<string>();
 
   const [autoSync, _setAutoSync] = useState<boolean>();
@@ -68,9 +61,9 @@ export default function FileProvider({
     _setWorkingDir(path);
   }, []);
 
-  const getContent = useCallback((tempFileNode: FileNode) => {
+  const getContent = (tempFileNode: FileNode) => {
     window.electron.ipcRenderer.sendMessage('get-content', tempFileNode);
-  }, []);
+  };
 
   const setFileNode = useCallback(
     (tempFileNode: FileNode) => {
@@ -79,27 +72,13 @@ export default function FileProvider({
         getContent(tempFileNode);
       }
     },
-    [autoSync, getContent],
+    [autoSync],
   );
 
-  /**
-   * Reasons for a fileContentNode is so that the fileNode contains the content of the file
-   * This is useful if we want to perform search operations as we can search the content of the file
-   * For fileNode with Content, we can retrieve the content when autosync is switched on. if it is off, there is no need to retrieve the content
-   * Hence, the content should be optional
-   */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const setFileContentNode = useCallback(
-    (tempFileContentNode: FileContentNode) => {
-      _setFileContentNode(tempFileContentNode);
-    },
-    [],
-  );
-
-  const setContent = useCallback((contentToSet: string) => {
+  const setContent = (contentToSet: string) => {
     window.electron.ipcRenderer.sendMessage('get-token-count', contentToSet);
     _setContent(contentToSet);
-  }, []);
+  };
 
   const setAutoSync = useCallback(
     (newAutoSync: boolean) => {
@@ -108,7 +87,7 @@ export default function FileProvider({
         getContent(fileNode);
       }
     },
-    [fileNode, getContent],
+    [fileNode],
   );
 
   const providerValue = useMemo(
@@ -138,42 +117,64 @@ export default function FileProvider({
       autoSync,
       filterName,
       setFilterName,
-      getContent,
       setAutoSync,
       pingIpc,
       tokenCount,
     ],
   );
 
-  useEffect(() => {
-    window.electron.ipcRenderer.on('ipc-example', (arg) => {
-      // eslint-disable-next-line no-console
-      console.log(arg);
-    });
+  const handleIpcExample = useCallback((arg: unknown) => {
+    // eslint-disable-next-line no-console
+    console.log(arg);
+  }, []);
 
-    window.electron.ipcRenderer.on('root-dir-set', (arg) => {
-      const newFileNode = FileNodeSchema.parse(arg);
-      setFileNode(newFileNode);
-    });
-
-    window.electron.ipcRenderer.on('get-content', (arg) => {
-      const newContent = z.string().parse(arg);
-      setContent(newContent);
-    });
-
-    window.electron.ipcRenderer.on('get-token-count', (arg) => {
-      const parsedResult = z.number().safeParse(arg);
-      if (!parsedResult.success) {
+  const handleRootDirSet = useCallback(
+    (arg: unknown) => {
+      try {
+        const newFileNode = FileNodeSchema.parse(arg);
+        setFileNode(newFileNode);
+      } catch (error) {
         // eslint-disable-next-line no-console
-        console.error('Failed to parse token count', parsedResult.error);
-        return;
+        console.error('Failed to parse root dir set message', error);
       }
-      const token = parsedResult.data;
-      setTokenCount(token);
-    });
+    },
+    [setFileNode],
+  );
 
-    // TODO: Cleanup the listeners
-  }, [setFileNode, setContent]);
+  const handleGetContent = (arg: unknown) => {
+    const parsedResult = z.string().safeParse(arg);
+    if (!parsedResult.success) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to parse content', parsedResult.error);
+      return;
+    }
+    setContent(parsedResult.data);
+  };
+
+  const handleGetTokenCount = (arg: unknown) => {
+    const parsedResult = z.number().safeParse(arg);
+    if (!parsedResult.success) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to parse token count', parsedResult.error);
+      return;
+    }
+    setTokenCount(parsedResult.data);
+  };
+
+  useEffect(() => {
+    window.electron.ipcRenderer.on('ipc-example', handleIpcExample);
+    window.electron.ipcRenderer.on('root-dir-set', handleRootDirSet);
+    window.electron.ipcRenderer.on('get-content', handleGetContent);
+    window.electron.ipcRenderer.on('get-token-count', handleGetTokenCount);
+
+    return () => {
+      window.electron.ipcRenderer.off('ipc-example', handleIpcExample);
+      window.electron.ipcRenderer.off('root-dir-set', handleRootDirSet);
+      window.electron.ipcRenderer.off('get-content', handleGetContent);
+      window.electron.ipcRenderer.off('get-token-count', handleGetTokenCount);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <FileContext.Provider value={providerValue}>

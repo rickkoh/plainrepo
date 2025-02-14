@@ -16,6 +16,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { ChevronRight } from 'lucide-react';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useDebounceCallback } from 'usehooks-ts';
 
 import { useFileContext } from '../contexts/FileContext';
 import { FileNode, FileNodeSchema } from '../../types/FileNode';
@@ -136,22 +137,22 @@ function Tree({
   fileNode: FileNode;
   onStructureChange?: (fileNode: FileNode) => void;
 }) {
-  const form = useForm<FileNode>({ resolver: zodResolver(FileNodeSchema) });
+  const form = useForm<FileNode>({
+    resolver: zodResolver(FileNodeSchema),
+    values: fileNode,
+  });
 
-  useEffect(() => {
-    form.reset(fileNode);
-  }, [form, fileNode]);
-
-  useEffect(() => {
+  const debouncedOnStructureChange = useDebounceCallback((values) => {
     if (onStructureChange) {
-      const subscription = form.watch((values) => {
-        const tempFileNode = FileNodeSchema.parse(values);
-        onStructureChange(tempFileNode);
-      });
-      return () => subscription.unsubscribe();
+      const tempFileNode = FileNodeSchema.parse(values);
+      onStructureChange(tempFileNode);
     }
-    return () => {};
-  }, [form, onStructureChange]);
+  }, 0);
+
+  useEffect(() => {
+    const subscription = form.watch(debouncedOnStructureChange);
+    return () => subscription.unsubscribe();
+  }, [debouncedOnStructureChange, form]);
 
   return (
     // eslint-disable-next-line react/jsx-props-no-spreading
@@ -164,14 +165,7 @@ function Tree({
 }
 
 export default function Explorer() {
-  const {
-    workingDir,
-    setWorkingDir,
-    fileNode,
-    setFileNode,
-    getContent,
-    autoSync,
-  } = useFileContext();
+  const { workingDir, setWorkingDir, fileNode, setFileNode } = useFileContext();
 
   const handleClick = async () => {
     const folder = await window.electron.ipcRenderer.selectFolder();
@@ -191,9 +185,6 @@ export default function Explorer() {
           fileNode={fileNode}
           onStructureChange={(dir) => {
             setFileNode(dir);
-            if (autoSync) {
-              getContent(dir);
-            }
           }}
         />
       )}
