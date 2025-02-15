@@ -3,39 +3,39 @@ Features:
     ✔ Test tree @done(25-01-19 00:34)
     ✔ Add tree to content @done(25-01-19 00:34)
   ✔ Copy entire content @done(25-01-26 18:08)
+  ✔ UI improvements @done(25-02-15 13:26)
+    ✔ Explorer @done(25-02-15 13:26)
+    ✔ Icons @done(25-02-15 13:26)
+    ✔ State @done(25-02-15 13:26)
+    ✔ Current path @done(25-02-15 13:26)
+    ✔ Hover effects @done(25-02-15 13:26)
   ☐ Autosync state, Autosync on, off, syncing
   ☐ Better naming for the variables in fileContext
-    ☐ Set root path, should it be called root path? (maybe workingDir)
-    ☐ onStructureChange
+    ✔ onStructureChange @done(25-02-14 16:13)
     ✔ workspace @started(25-02-03 22:39) @done(25-02-03 22:39) @lasted(19s)
-  ☐ Fs handle try catch
+    ☐ Set root path, should it be called root path? (maybe workingDir)
+  ✔ Fs handle try catch @done(25-02-15 13:26)
   ☐ Search
-    ☐ Search for file
+    ✔ Search for file @done(25-02-15 13:26)
     ☐ Goto file
     ☐ Search for content
     ☐ Jump to content
   ☐ Loading while fs is reading
   ☐ Settings page
     ✔ Ignore folders/files @done(25-02-10 01:27)
-    ☐ Insert .gitignore
     ✔ Darkmode @done(25-02-10 01:27)
-  ☐ UI improvements
-    ☐ Explorer
-    ☐ Icons
-    ☐ State
-    ☐ Current path
-    ☐ Hover effects
+    ✔ Replace sensitive texts @done(25-02-15 13:27)
+    ☐ Insert .gitignore
+    ☐ Edit list item component
   ☐ Menu
     ☐ File (open)
   ☐ Content
     ☐ Indentation
     ☐ Line numbers
-  ☐ Collapse hide and show only selected files
+  ✔ Collapse hide and show only selected files @done(25-02-15 13:25)
   ☐ Save state
   ☐ Tabs feature, open multiple tabs.
     ☐ Each tab with it's set of opened files
-
-
 
   ☐ Add 'Consolas' font
   ☐ Darkmode
@@ -44,8 +44,8 @@ Landing Page:
   ☐ Release first version of the app
   ☐ Open source link
   ☐ Github link
-  ☐ Landing page
-    ☐ Birdseye view of your repository
+  ☐ Landing page (Plain repo)
+    ☐ Plain text view of your repo
     ☐ For you to: Pick, Copy, Search
     ☐ Have control over what to pick: Ignore folders/files/keywords
     ☐ Feed the right context to AI models at your fingertips
@@ -53,16 +53,18 @@ Landing Page:
   ☐ Donate button
 
 Bugs:
-  ☐ If one is selected, parent checkmark should be checked
+  ✔ If one is selected, parent checkmark should be checked @done(25-02-15 13:26)
+  ☐ Search list's selected item doesn't get updated
+  ☐ Exclude list delete edit button doesn't work
   ☐ ZodError when changing directory
   ☐ Add tailwind to gitignore, ignore in build
 
 Performance:
   ✔ Improve initial load time when figuring out root path @started(25-01-28 14:08) @done(25-02-03 22:23) @lasted(6d8h15m20s)
-  ☐ Autosync should run concurrently and should update in real-time
-  ☐ Able to cancel "opening file" when autoSync is on
-  ☐ Optimise search for file
   ✔ Optimise fs for larger directory @done(25-01-27 00:04)
   ✔ DFS to change selected should have some pruning functions @done(25-01-27 00:04)
   ✔ Form set value to have batch update instead of individual @done(25-01-26 23:48)
   ✔ Improve performance for auto get tokens @done(25-01-26 23:48)
+  ☐ Autosync should run concurrently and should update in real-time
+  ☐ Able to cancel "opening file" when autoSync is on
+  ☐ Optimise search for file

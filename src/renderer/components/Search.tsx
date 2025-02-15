@@ -108,11 +108,11 @@ export default function Search() {
   );
 
   return (
-    <div className="w-full h-full pt-4 flex flex-col space-y-2">
+    <div className="flex flex-col w-full h-full py-4 space-y-2 overflow-y-scroll">
       <p className="px-4 text-sm">Search</p>
-      <div className="flex flex-col space-y-2 px-4">
+      <div className="flex flex-col px-4 space-y-2">
         <input
-          className="border bg-background text-foreground placeholder:text-foreground border-accent focus:rounded-none px-1"
+          className="px-1 border bg-background text-foreground placeholder:text-foreground border-accent focus:rounded-none"
           placeholder="Search for file"
           value={filterName}
           onChange={(e) => setFilterName(e.target.value)}
@@ -121,10 +121,10 @@ export default function Search() {
       <div>
         {searchedFileNodes && searchedFileNodes.length > 0 ? (
           <div className="flex flex-col space-y-2">
-            <div className="flex flex-row items-center space-x-2 px-4">
+            <div className="flex flex-row items-center px-4 space-x-2">
               <button
                 type="button"
-                className="border-b border-foreground text-sm"
+                className="text-sm border-b border-foreground"
                 onClick={() => setSelectAll(selectAll)}
               >
                 Select all
@@ -133,7 +133,7 @@ export default function Search() {
             {searchedFileNodes.map((searchedFileNode, index) => (
               <div
                 key={searchedFileNode.path}
-                className="flex flex-row items-center space-x-2 hover:bg-accent px-4"
+                className="flex flex-row items-center px-4 space-x-2 hover:bg-accent"
               >
                 <Checkbox
                   id={searchedFileNode.path}
@@ -145,7 +145,7 @@ export default function Search() {
                 <label htmlFor={searchedFileNode.path}>
                   {searchedFileNode.name}
                 </label>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-sm text-muted-foreground">
                   {searchedFileNode.path}
                 </p>
               </div>

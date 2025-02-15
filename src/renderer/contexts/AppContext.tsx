@@ -2,7 +2,8 @@ import { cn } from '@/lib/utils';
 import {
   AppSettings,
   AppSettingsSchema,
-  Exclude,
+  ExcludeList,
+  ReplaceList,
 } from '@/src/types/AppSettings';
 import {
   createContext,
@@ -18,8 +19,10 @@ import {
 interface AppContextProps {
   isDarkMode: boolean;
   toggleDarkMode: () => void;
-  exclude: Exclude;
-  setExclude: (excludeList: Exclude) => void;
+  exclude: ExcludeList;
+  setExclude: (excludeList: ExcludeList) => void;
+  replace: ReplaceList;
+  setReplace: (replaceList: ReplaceList) => void;
 }
 
 export const AppContext = createContext<AppContextProps | undefined>(undefined);
@@ -32,25 +35,31 @@ export default function AppProvider({
   const appSettings = useRef<AppSettings>();
 
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
-  const [exclude, _setExclude] = useState<Exclude>([]);
+  const [exclude, _setExclude] = useState<ExcludeList>([]);
+  const [replace, _setReplace] = useState<ReplaceList>([]);
 
   const toggleDarkMode = useCallback(() => {
     window.electron.ipcRenderer.sendMessage('toggle-dark-mode', !isDarkMode);
     setIsDarkMode((prev) => !prev);
   }, [isDarkMode]);
 
-  const setExclude = useCallback(
-    (newExclude: Exclude) => {
-      _setExclude(newExclude);
-      appSettings.current = { ...appSettings.current, exclude: newExclude };
-      console.log('called and sending message');
-      window.electron.ipcRenderer.sendMessage(
-        'set-app-settings',
-        appSettings.current,
-      );
-    },
-    [_setExclude],
-  );
+  const setExclude = (newExcludeList: ExcludeList) => {
+    _setExclude(newExcludeList);
+    appSettings.current = { ...appSettings.current, exclude: newExcludeList };
+    window.electron.ipcRenderer.sendMessage(
+      'set-app-settings',
+      appSettings.current,
+    );
+  };
+
+  const setReplace = (newReplaceList: ReplaceList) => {
+    _setReplace(newReplaceList);
+    appSettings.current = { ...appSettings.current, replace: newReplaceList };
+    window.electron.ipcRenderer.sendMessage(
+      'set-app-settings',
+      appSettings.current,
+    );
+  };
 
   const providerValue = useMemo(
     () => ({
@@ -58,8 +67,10 @@ export default function AppProvider({
       toggleDarkMode,
       exclude,
       setExclude,
+      replace,
+      setReplace,
     }),
-    [exclude, isDarkMode, setExclude, toggleDarkMode],
+    [exclude, replace, isDarkMode, toggleDarkMode],
   );
 
   useEffect(() => {
@@ -67,8 +78,10 @@ export default function AppProvider({
       .readUserData()
       .then((userData) => {
         const tempUserData = AppSettingsSchema.parse(userData);
+        appSettings.current = tempUserData;
         setIsDarkMode(tempUserData.darkMode ?? false);
         _setExclude(tempUserData.exclude ?? []);
+        _setReplace(tempUserData.replace ?? []);
         return null;
       })
       .catch(() => {
