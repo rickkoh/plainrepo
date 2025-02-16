@@ -25,15 +25,15 @@ export const FileContext = createContext<FileContextProps | undefined>(
 
 interface FileProviderProps {
   fileNode: FileNode;
+  setFileNode: (fileNode: FileNode) => void;
 }
 
 export default function FileProvider({
   fileNode,
+  setFileNode,
   children,
 }: PropsWithChildren<FileProviderProps>) {
   const { autoSync } = useWorkspaceContext();
-
-  const [currentFileNode, _setCurrentFileNode] = useState<FileNode>(fileNode);
 
   const [content, _setContent] = useState<string>();
 
@@ -51,6 +51,11 @@ export default function FileProvider({
     }
     setTokenCount(parsedResult.data);
   };
+
+  // TODO: Fix
+  // Problem: When I update the fileNode, I am updating current fileNode
+  // When I switch to other tabs, I use their fileNode
+  // When I swtich back to this tab, I get the fresh/brand new fileNode as I am only updating current fileNode
 
   const setContent = useCallback((contentToSet: string) => {
     getTokenCount(contentToSet);
@@ -72,33 +77,37 @@ export default function FileProvider({
     [setContent],
   );
 
-  useEffect(() => {
-    if (autoSync) {
-      getContent(currentFileNode);
-    }
-  }, [autoSync, currentFileNode, getContent]);
-
-  const setFileNode = useCallback(
+  const setThisFileNode = useCallback(
     (tempFileNode: FileNode) => {
-      _setCurrentFileNode(tempFileNode);
+      setFileNode(tempFileNode);
       if (autoSync) {
         getContent(tempFileNode);
       }
     },
-    [autoSync, getContent],
+    [autoSync, getContent, setFileNode],
   );
+
+  useEffect(() => {
+    setThisFileNode(fileNode);
+  }, [fileNode, setFileNode, setThisFileNode]);
+
+  useEffect(() => {
+    if (autoSync) {
+      getContent(fileNode);
+    }
+  }, [autoSync, fileNode, getContent]);
 
   const providerValue = useMemo(
     () => ({
-      fileNode: currentFileNode,
-      setFileNode,
+      fileNode,
+      setFileNode: setThisFileNode,
       content,
       filterName,
       setFilterName,
       tokenCount,
       setTokenCount,
     }),
-    [currentFileNode, setFileNode, content, filterName, tokenCount],
+    [fileNode, setThisFileNode, content, filterName, tokenCount],
   );
 
   return (

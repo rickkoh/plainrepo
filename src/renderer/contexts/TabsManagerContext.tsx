@@ -6,68 +6,115 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { FileNode } from '@/src/types/FileNode';
 
-import FileNodeProvider from './FileContext';
 import { useWorkspaceContext } from './WorkspaceContext';
+import FileProvider from './FileContext';
 
+export type TabData = {
+  id: string;
+  title: string;
+  fileNode: FileNode;
+  content: string;
+  tokenCount: number;
+};
 interface TabsManagerContextProps {
+  tabs: TabData[];
+  activeTabIndex: number;
   tabsLength: number;
-  activeTab: number;
+  activeTab: TabData | undefined;
   setActiveTab: (index: number) => void;
   closeTab: (index: number) => void;
   newTab: () => void;
   nextTab: () => void;
   previousTab: () => void;
+  setFileNode: (newFileNode: FileNode) => void;
 }
 
 export const TabsManagerContext = createContext<
   TabsManagerContextProps | undefined
 >(undefined);
 
-interface TabsManagerProviderProps {}
+let id = 0;
 
-export default function TabsManagerProvider({
-  children,
-}: PropsWithChildren<TabsManagerProviderProps>) {
-  const { fileNode } = useWorkspaceContext();
+interface LevelProps {
+  fileNode: FileNode;
+}
 
-  const [tabsLength, _setTabsLength] = useState(1);
+function Level({ children, fileNode }: PropsWithChildren<LevelProps>) {
+  const [tabs, setTabs] = useState<TabData[]>([
+    {
+      id: String(id),
+      title: 'Tab',
+      fileNode: JSON.parse(JSON.stringify(fileNode)),
+      content: '',
+      tokenCount: 0,
+    },
+  ]);
 
-  const [activeTab, setActiveTab] = useState(0);
+  const tabsLength = useMemo(() => tabs.length, [tabs]);
+
+  const [activeTabIndex, setActiveTabIndex] = useState<number>(0);
+
+  const activeTab = useMemo(() => {
+    return tabs[activeTabIndex];
+  }, [activeTabIndex, tabs]);
+
+  const setActiveTab = (index: number) => {
+    setActiveTabIndex(index);
+  };
 
   const closeTab = useCallback(
     (index: number) => {
-      if (tabsLength === 1) {
-        return;
-      }
-      if (index === tabsLength - 1) {
-        setActiveTab(index - 1);
-      }
-      if (index < activeTab) {
-        setActiveTab(activeTab - 1);
-      }
-      _setTabsLength(tabsLength - 1);
+      const newTabs = tabs.filter((_, i) => i !== index);
+      setTabs(newTabs);
     },
-    [activeTab, tabsLength],
+    [tabs],
   );
 
   const newTab = useCallback(() => {
-    _setTabsLength(tabsLength + 1);
-    setActiveTab(tabsLength);
-  }, [tabsLength]);
+    if (fileNode === undefined) {
+      return;
+    }
+    id += 1;
+    const newTabData: TabData = {
+      id: String(id),
+      title: 'Tab',
+      fileNode: JSON.parse(JSON.stringify(fileNode)),
+      content: '',
+      tokenCount: 0,
+    };
+
+    setTabs([...tabs, newTabData]);
+  }, [fileNode, tabs]);
 
   const nextTab = useCallback(() => {
-    setActiveTab((activeTab + 1) % tabsLength);
-  }, [activeTab, tabsLength]);
+    const nextIndex = (activeTabIndex + 1) % tabsLength;
+    setActiveTabIndex(nextIndex);
+  }, [activeTabIndex, tabsLength]);
 
   const previousTab = useCallback(() => {
-    setActiveTab((activeTab - 1 + tabsLength) % tabsLength);
-  }, [activeTab, tabsLength]);
+    const prevIndex = (activeTabIndex - 1) % tabsLength;
+    setActiveTabIndex(prevIndex);
+  }, [activeTabIndex, tabsLength]);
+
+  const setFileNode = useCallback(
+    (newFileNode: FileNode) => {
+      const newTabs = [...tabs];
+      newTabs[activeTabIndex] = {
+        ...newTabs[activeTabIndex],
+        fileNode: newFileNode,
+      };
+      setTabs(newTabs);
+    },
+    [activeTabIndex, tabs],
+  );
 
   const providerValue = useMemo(
     () => ({
+      tabs,
+      activeTabIndex,
       tabsLength,
       activeTab,
       setActiveTab,
@@ -75,10 +122,37 @@ export default function TabsManagerProvider({
       previousTab,
       closeTab,
       newTab,
+      setFileNode,
     }),
-    [activeTab, closeTab, newTab, nextTab, previousTab, tabsLength],
+    [
+      activeTab,
+      activeTabIndex,
+      closeTab,
+      newTab,
+      nextTab,
+      previousTab,
+      setFileNode,
+      tabs,
+      tabsLength,
+    ],
   );
-  const { setWorkingDir } = useWorkspaceContext();
+
+  return (
+    <TabsManagerContext.Provider value={providerValue}>
+      <FileProvider fileNode={activeTab.fileNode} setFileNode={setFileNode}>
+        {children}
+      </FileProvider>
+    </TabsManagerContext.Provider>
+  );
+}
+
+interface TabsManagerProviderProps {}
+
+export default function TabsManagerProvider({
+  children,
+}: PropsWithChildren<TabsManagerProviderProps>) {
+  const { fileNode, setWorkingDir } = useWorkspaceContext();
+
   const handleClick = async () => {
     const folder = await window.electron.ipcRenderer.selectFolder();
     if (folder) {
@@ -86,37 +160,17 @@ export default function TabsManagerProvider({
     }
   };
 
+  if (fileNode) {
+    return <Level fileNode={fileNode}>{children}</Level>;
+  }
   return (
-    <TabsManagerContext.Provider value={providerValue}>
-      <Tabs value={String(activeTab)} className="w-full h-full overflow-scroll">
-        {Array.from({ length: tabsLength }).map((_, index) => {
-          return (
-            <TabsContent
-              // eslint-disable-next-line react/no-array-index-key
-              key={index}
-              value={String(index)}
-              className="w-full h-full mt-0 data-[state=inactive]:hidden testtt"
-              forceMount
-            >
-              {fileNode && (
-                <FileNodeProvider fileNode={fileNode}>
-                  {children}
-                </FileNodeProvider>
-              )}
-            </TabsContent>
-          );
-        })}
-        {fileNode === undefined && (
-          <Button
-            type="button"
-            className="px-4 py-2 text-primary-foreground bg-primary rounded-md"
-            onClick={handleClick}
-          >
-            Open Folder
-          </Button>
-        )}
-      </Tabs>
-    </TabsManagerContext.Provider>
+    <Button
+      type="button"
+      className="px-4 py-2 text-primary-foreground bg-primary rounded-md"
+      onClick={handleClick}
+    >
+      Open Folder
+    </Button>
   );
 }
 
