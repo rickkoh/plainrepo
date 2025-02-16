@@ -1,6 +1,7 @@
 // Disable no-unused-vars, broken for spread args
 /* eslint no-unused-vars: off */
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
+import { FileNode } from '../types/FileNode';
 
 export type Channels =
   | 'ipc-example'
@@ -33,6 +34,10 @@ const electronHandler = {
     },
     readUserData: () => ipcRenderer.invoke('userData:read'),
     selectFolder: () => ipcRenderer.invoke('dialog:openDirectory'),
+    getContent: (fileNode: FileNode): Promise<string> =>
+      ipcRenderer.invoke('file:get-content', fileNode),
+    getTokenCount: (string: string): Promise<string> =>
+      ipcRenderer.invoke('file:get-token-count', string),
   },
 };
 

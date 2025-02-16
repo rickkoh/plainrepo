@@ -2,7 +2,6 @@ import { useCallback, useState } from 'react';
 import { BaseFileNode, FileNode } from '@/src/types/FileNode';
 import { Checkbox } from '@/components/ui/checkbox';
 import { CheckedState } from '@radix-ui/react-checkbox';
-
 import { useFileContext } from '../contexts/FileContext';
 
 interface SearchedFileNode extends BaseFileNode {

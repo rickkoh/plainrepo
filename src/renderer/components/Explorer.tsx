@@ -18,8 +18,9 @@ import { ChevronRight } from 'lucide-react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useDebounceCallback } from 'usehooks-ts';
 
-import { useFileContext } from '../contexts/FileContext';
 import { FileNode, FileNodeSchema } from '../../types/FileNode';
+import { useWorkspaceContext } from '../contexts/WorkspaceContext';
+import { useFileContext } from '../contexts/FileContext';
 
 function TreeNode({
   fileNode,
@@ -165,7 +166,8 @@ function Tree({
 }
 
 export default function Explorer() {
-  const { workingDir, setWorkingDir, fileNode, setFileNode } = useFileContext();
+  const { workingDir, setWorkingDir } = useWorkspaceContext();
+  const { fileNode, setFileNode } = useFileContext();
 
   const handleClick = async () => {
     const folder = await window.electron.ipcRenderer.selectFolder();

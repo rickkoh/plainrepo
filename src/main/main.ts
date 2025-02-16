@@ -56,35 +56,6 @@ ipcMain.on('set-root-dir', async (event, arg) => {
   event.reply('root-dir-set', directoryTree);
 });
 
-ipcMain.on('get-content', async (event, arg) => {
-  console.log('attempting to get-content');
-  const parsedResult = FileNodeSchema.safeParse(arg);
-  if (!parsedResult.success) {
-    event.reply('get-content', 'Failed to parse file node');
-    return;
-  }
-  const fileNode = parsedResult.data;
-  let content = '';
-  content += `${generateFileTree(fileNode)}\n`;
-  content += getContent(fileNode);
-  event.reply('get-content', content);
-});
-
-ipcMain.on('get-token-count', async (event, arg) => {
-  console.log('attempting to get-token-count');
-  const parsedResult = z.string().safeParse(arg);
-  if (!parsedResult.success) {
-    event.reply('get-token-count', 'Failed to parse content');
-    return;
-  }
-
-  const content = parsedResult.data;
-
-  const tokenCount = TokenEstimator.estimateTokens(content);
-
-  event.reply('get-token-count', tokenCount);
-});
-
 ipcMain.on('toggle-dark-mode', async (event, arg) => {
   console.log('attempting to toggle-dark-mode', arg);
 
@@ -190,6 +161,39 @@ const createWindow = async () => {
       return null;
     }
     return readAppSettings();
+  });
+
+  ipcMain.handle('file:get-content', async (event, arg) => {
+    if (!mainWindow) {
+      return null;
+    }
+    console.log('attempting to get-content');
+    const parsedResult = FileNodeSchema.safeParse(arg);
+    if (!parsedResult.success) {
+      return '';
+    }
+    const fileNode = parsedResult.data;
+    let content = '';
+    content += `${generateFileTree(fileNode)}\n`;
+    content += getContent(fileNode);
+    return content;
+  });
+
+  ipcMain.handle('file:get-token-count', async (event, arg) => {
+    if (!mainWindow) {
+      return null;
+    }
+    console.log('attempting to get-token-count');
+    const parsedResult = z.string().safeParse(arg);
+    if (!parsedResult.success) {
+      return 'Failed to parse content';
+    }
+
+    const content = parsedResult.data;
+
+    const tokenCount = TokenEstimator.estimateTokens(content);
+
+    return tokenCount;
   });
 
   const menuBuilder = new MenuBuilder(mainWindow);

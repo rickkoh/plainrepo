@@ -8,10 +8,12 @@
 import { cn } from '@/lib/utils';
 import { useCopyToClipboard } from 'usehooks-ts';
 import { Button } from '@/components/ui/button';
+import { useWorkspaceContext } from '../contexts/WorkspaceContext';
 import { useFileContext } from '../contexts/FileContext';
 
 export default function Toolbar() {
-  const { autoSync, setAutoSync, content, tokenCount } = useFileContext();
+  const { autoSync, setAutoSync } = useWorkspaceContext();
+  const { content, tokenCount } = useFileContext();
 
   const [, copy] = useCopyToClipboard();
 
