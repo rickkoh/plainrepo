@@ -188,8 +188,8 @@
     "webpack-merge": "^5.9.0"
   },
   "build": {
-    "productName": "PlainRepo",
-    "appId": "org.erb.PlainRepo",
+    "productName": "Plainrepo",
+    "appId": "org.erb.Plainrepo",
     "asar": true,
     "asarUnpack": "**\\*.{node,dll}",
     "files": [
