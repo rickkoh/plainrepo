@@ -19,7 +19,7 @@ export default function TabsBar() {
           key={tab.id}
           type="button"
           className={cn(
-            'flex flex-row items-center border border-t-0 px-4 py-1 space-x-2',
+            'flex flex-row items-center border-b border-background px-4 py-1 space-x-2',
             index === activeTabIndex && 'border-foreground',
           )}
           onClick={(e) => {

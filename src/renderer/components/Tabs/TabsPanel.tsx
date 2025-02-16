@@ -3,7 +3,7 @@ import TabsContentArea from './TabsContentArea';
 
 export default function TabsPanel() {
   return (
-    <div>
+    <div className="w-full h-full">
       <TabsBar />
       <TabsContentArea />
     </div>
