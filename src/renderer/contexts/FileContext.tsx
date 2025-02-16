@@ -88,10 +88,6 @@ export default function FileProvider({
   );
 
   useEffect(() => {
-    setThisFileNode(fileNode);
-  }, [fileNode, setFileNode, setThisFileNode]);
-
-  useEffect(() => {
     if (autoSync) {
       getContent(fileNode);
     }
