@@ -11,7 +11,6 @@ import { FileNode } from '@/src/types/FileNode';
 import { TabData, TabDataArray } from '@/src/types/TabData';
 
 import { useWorkspaceContext } from './WorkspaceContext';
-import FileProvider from './FileContext';
 
 interface TabsManagerContextProps {
   tabs: TabDataArray;
@@ -74,14 +73,6 @@ export default function TabsManagerProvider({
     (index: number) => {
       const newTabs = tabs.filter((_, i) => i !== index);
       if (newTabs.length === 0) {
-        // id += 1;
-        // newTabs.push({
-        //   id: String(id),
-        //   title: 'Tab',
-        //   fileNode: JSON.parse(JSON.stringify(fileNode)),
-        //   content: '',
-        //   tokenCount: 0,
-        // });
         return;
       }
       if (activeTabIndex >= newTabs.length) {
@@ -174,21 +165,6 @@ export default function TabsManagerProvider({
   );
 
   useEffect(() => {
-    // if (true) {
-    // }
-    // if (workingDir === undefined) {
-    //   return;
-    // }
-    // window.electron.ipcRenderer
-    //   .loadWorkspace(workingDir)
-    //   .then((loadedTabs) => {
-    //     if (loadedTabs !== undefined) {
-    //       _setTabs(loadedTabs);
-    //     }
-    //     return null;
-    //   })
-    //   .catch(() => {});
-
     if (tabsLength === 0) {
       newTab();
     }
@@ -196,12 +172,7 @@ export default function TabsManagerProvider({
 
   return (
     <TabsManagerContext.Provider value={providerValue}>
-      <FileProvider
-        fileNode={activeTab ? activeTab.fileNode : undefined}
-        setFileNode={setFileNode}
-      >
-        {children}
-      </FileProvider>
+      {children}
     </TabsManagerContext.Provider>
   );
 }

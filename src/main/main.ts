@@ -206,6 +206,19 @@ const createWindow = async () => {
     return tabData;
   });
 
+  ipcMain.handle('appSettings:update', async (event, settings) => {
+    console.log('Updating app settings:', settings);
+    try {
+      // Write the settings to JSON (or however writeAppSettings is implemented)
+      await writeAppSettings(settings);
+      // Optionally, you could return some confirmation data
+      return { success: true };
+    } catch (error: any) {
+      console.error('Failed to update app settings:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
   const menuBuilder = new MenuBuilder(mainWindow);
   menuBuilder.buildMenu();
 

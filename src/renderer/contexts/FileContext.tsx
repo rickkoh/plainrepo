@@ -10,78 +10,81 @@ import {
 import { z } from 'zod';
 import { FileNode } from '../../types/FileNode';
 import { useWorkspaceContext } from './WorkspaceContext';
+import { useTabsManagerContext } from './TabsManagerContext';
 
 interface FileContextProps {
   content?: string;
   fileNode?: FileNode;
   setFileNode: (fileNode: FileNode) => void;
   tokenCount?: number;
-  setTokenCount: (tokenCount: number) => void;
 }
 
-export const FileContext = createContext<FileContextProps | undefined>(
-  undefined,
-);
+const FileContext = createContext<FileContextProps | undefined>(undefined);
 
-interface FileProviderProps {
-  fileNode?: FileNode;
-  setFileNode: (fileNode: FileNode) => void;
-}
+interface FileProviderProps {}
 
 export default function FileProvider({
-  fileNode,
-  setFileNode,
   children,
 }: PropsWithChildren<FileProviderProps>) {
+  const { activeTab, setFileNode } = useTabsManagerContext();
+
+  const fileNode = useMemo(() => {
+    return activeTab?.fileNode;
+  }, [activeTab]);
+
   const { autoSync } = useWorkspaceContext();
 
   const [content, _setContent] = useState<string>();
-
   const [tokenCount, setTokenCount] = useState<number>();
 
-  const [filterName, setFilterName] = useState<string>();
-
-  const getTokenCount = async (contentToCount: string) => {
-    const arg = await window.electron.ipcRenderer.getTokenCount(contentToCount);
-    const parsedResult = z.number().safeParse(arg);
-    if (!parsedResult.success) {
-      // eslint-disable-next-line no-console
-      console.error('Failed to parse token count', parsedResult.error);
+  const getTokenCount = useCallback(async (text: string) => {
+    const response = await window.electron.ipcRenderer.getTokenCount(text);
+    const parsed = z.number().safeParse(response);
+    if (!parsed.success) {
       return;
     }
-    setTokenCount(parsedResult.data);
-  };
-
-  const setContent = useCallback((contentToSet: string) => {
-    getTokenCount(contentToSet);
-    _setContent(contentToSet);
+    setTokenCount(parsed.data);
   }, []);
 
+  const setContent = useCallback(
+    (newContent: string) => {
+      getTokenCount(newContent);
+      _setContent(newContent);
+    },
+    [getTokenCount],
+  );
+
   const getContent = useCallback(
-    async (tempFileNode: FileNode) => {
-      const tempContent =
-        await window.electron.ipcRenderer.getContent(tempFileNode);
-      const parsedResult = z.string().safeParse(tempContent);
-      if (!parsedResult.success) {
-        // eslint-disable-next-line no-console
-        console.error('Failed to parse content', parsedResult.error);
-        return;
+    async (node: FileNode) => {
+      try {
+        const response = await window.electron.ipcRenderer.getContent(node);
+        const parsed = z.string().safeParse(response);
+        if (!parsed.success) {
+          console.error('Failed to parse content:', parsed.error);
+          return;
+        }
+        setContent(parsed.data);
+      } catch (error) {
+        console.error('Error fetching content:', error);
       }
-      setContent(parsedResult.data);
     },
     [setContent],
   );
 
+  /**
+   * Sets the file node and, if autoSync is enabled, retrieves its content.
+   */
   const setThisFileNode = useCallback(
-    (tempFileNode: FileNode) => {
-      setFileNode(tempFileNode);
+    (node: FileNode) => {
+      setFileNode(node);
       if (autoSync) {
-        getContent(tempFileNode);
+        getContent(node);
       }
     },
     [autoSync, getContent, setFileNode],
   );
 
+  // When autoSync is enabled, fetch content whenever the file node changes.
   useEffect(() => {
     if (autoSync && fileNode) {
       getContent(fileNode);
@@ -93,12 +96,9 @@ export default function FileProvider({
       fileNode,
       setFileNode: setThisFileNode,
       content,
-      filterName,
-      setFilterName,
       tokenCount,
-      setTokenCount,
     }),
-    [fileNode, setThisFileNode, content, filterName, tokenCount],
+    [fileNode, setThisFileNode, content, tokenCount],
   );
 
   return (
@@ -108,16 +108,10 @@ export default function FileProvider({
   );
 }
 
-FileProvider.defaultProps = {
-  fileNode: undefined,
-};
-
 export function useFileContext() {
   const context = useContext(FileContext);
   if (!context) {
-    throw new Error(
-      'useFileContext must be used within an FileContextProvider',
-    );
+    throw new Error('useFileContext must be used within a FileProvider');
   }
   return context;
 }

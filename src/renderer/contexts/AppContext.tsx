@@ -12,9 +12,13 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from 'react';
+
+// Helper to update settings via IPC.
+const updateAppSettings = (settings: AppSettings) => {
+  window.electron.ipcRenderer.updateAppSettings(settings);
+};
 
 interface AppContextProps {
   isDarkMode: boolean;
@@ -32,39 +36,68 @@ interface AppProviderProps {}
 export default function AppProvider({
   children,
 }: PropsWithChildren<AppProviderProps>) {
-  const appSettings = useRef<AppSettings>();
+  // Unified state for all app settings.
+  const [appSettings, setAppSettings] = useState<AppSettings>({
+    darkMode: false,
+    exclude: [],
+    replace: [],
+  });
 
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
-  const [exclude, _setExclude] = useState<ExcludeList>([]);
-  const [replace, _setReplace] = useState<ReplaceList>([]);
-
+  // Update functions.
   const toggleDarkMode = useCallback(() => {
-    appSettings.current = { ...appSettings.current, darkMode: !isDarkMode };
-    window.electron.ipcRenderer.sendMessage(
-      'set-app-settings',
-      appSettings.current,
-    );
-    setIsDarkMode((prev) => !prev);
-  }, [isDarkMode]);
+    const newSettings = { ...appSettings, darkMode: !appSettings.darkMode };
+    setAppSettings(newSettings);
+    updateAppSettings(newSettings);
+  }, [appSettings]);
 
-  const setExclude = (newExcludeList: ExcludeList) => {
-    appSettings.current = { ...appSettings.current, exclude: newExcludeList };
-    window.electron.ipcRenderer.sendMessage(
-      'set-app-settings',
-      appSettings.current,
-    );
-    _setExclude(newExcludeList);
-  };
+  const setExclude = useCallback(
+    (newExclude: ExcludeList) => {
+      const newSettings = { ...appSettings, exclude: newExclude };
+      setAppSettings(newSettings);
+      updateAppSettings(newSettings);
+    },
+    [appSettings],
+  );
 
-  const setReplace = (newReplaceList: ReplaceList) => {
-    appSettings.current = { ...appSettings.current, replace: newReplaceList };
-    window.electron.ipcRenderer.sendMessage(
-      'set-app-settings',
-      appSettings.current,
-    );
-    _setReplace(newReplaceList);
-  };
+  const setReplace = useCallback(
+    (newReplace: ReplaceList) => {
+      const newSettings = { ...appSettings, replace: newReplace };
+      setAppSettings(newSettings);
+      updateAppSettings(newSettings);
+    },
+    [appSettings],
+  );
 
+  const isDarkMode = useMemo(
+    () => appSettings.darkMode ?? false,
+    [appSettings.darkMode],
+  );
+
+  const exclude = useMemo(
+    () => appSettings.exclude ?? [],
+    [appSettings.exclude],
+  );
+
+  const replace = useMemo(
+    () => appSettings.replace ?? [],
+    [appSettings.replace],
+  );
+
+  // Load initial settings on mount.
+  useEffect(() => {
+    window.electron.ipcRenderer
+      .readUserData()
+      .then((userData: unknown) => {
+        const settings = AppSettingsSchema.parse(userData);
+        setAppSettings(settings);
+        return null;
+      })
+      .catch(() => {
+        setAppSettings((prev) => ({ ...prev }));
+      });
+  }, []);
+
+  // Memoize the provider value.
   const providerValue = useMemo(
     () => ({
       isDarkMode,
@@ -74,32 +107,14 @@ export default function AppProvider({
       replace,
       setReplace,
     }),
-    [exclude, replace, isDarkMode, toggleDarkMode],
+    [isDarkMode, toggleDarkMode, exclude, setExclude, replace, setReplace],
   );
-
-  useEffect(() => {
-    window.electron.ipcRenderer
-      .readUserData()
-      .then((userData) => {
-        const tempUserData = AppSettingsSchema.parse(userData);
-        appSettings.current = tempUserData;
-        setIsDarkMode(tempUserData.darkMode ?? false);
-        _setExclude(tempUserData.exclude ?? []);
-        _setReplace(tempUserData.replace ?? []);
-        return null;
-      })
-      .catch(() => {
-        setIsDarkMode(false);
-      });
-    return () => {};
-  }, []);
 
   return (
     <AppContext.Provider value={providerValue}>
       <div
         className={cn(
-          'w-full h-full bg-background text-foreground',
-          'transition-all duration-200',
+          'w-full h-full bg-background text-foreground transition-all duration-200',
           isDarkMode && 'dark',
         )}
       >
@@ -112,7 +127,7 @@ export default function AppProvider({
 export function useAppContext() {
   const context = useContext(AppContext);
   if (context === undefined) {
-    throw new Error('useAppContext must be used within a AppProvider');
+    throw new Error('useAppContext must be used within an AppProvider');
   }
   return context;
 }

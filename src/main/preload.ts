@@ -42,6 +42,10 @@ const electronHandler = {
       ipcRenderer.invoke('workspace:save', p, tabData),
     loadWorkspace: (p: string): Promise<TabDataArray> =>
       ipcRenderer.invoke('workspace:load', p),
+    updateAppSettings: (
+      settings: unknown,
+    ): Promise<{ success: boolean; error?: string }> =>
+      ipcRenderer.invoke('appSettings:update', settings),
   },
 };
 
