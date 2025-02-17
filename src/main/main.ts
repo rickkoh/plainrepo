@@ -24,6 +24,8 @@ import getContent from './utils/ContentAggregator';
 import { FileNodeSchema } from '../types/FileNode';
 import TokenEstimator from './utils/TokenEstimator';
 import { readAppSettings, writeAppSettings } from './utils/AppSettings';
+import { loadWorkspace, saveWorkspace } from './utils/AppData';
+import { TabDataArraySchema } from '../types/TabData';
 
 class AppUpdater {
   constructor() {
@@ -194,6 +196,38 @@ const createWindow = async () => {
     const tokenCount = TokenEstimator.estimateTokens(content);
 
     return tokenCount;
+  });
+
+  ipcMain.handle('workspace:save', async (event, arg1, arg2) => {
+    if (!mainWindow) {
+      return null;
+    }
+
+    console.log('attempting to save-file');
+    console.log('arg1', arg1);
+    console.log('arg2', arg2);
+
+    const parsedArg1 = z.string().parse(arg1);
+    const parsedArg2 = TabDataArraySchema.parse(arg2);
+
+    saveWorkspace(parsedArg1, parsedArg2);
+
+    return null;
+  });
+
+  ipcMain.handle('workspace:load', async (event, arg) => {
+    if (!mainWindow) {
+      return null;
+    }
+
+    console.log('attempting to open-file');
+    console.log('arg', arg);
+
+    const parsedArg = z.string().parse(arg);
+
+    const tabData = loadWorkspace(parsedArg);
+
+    return tabData;
   });
 
   const menuBuilder = new MenuBuilder(mainWindow);

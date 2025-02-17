@@ -52,11 +52,6 @@ export default function FileProvider({
     setTokenCount(parsedResult.data);
   };
 
-  // TODO: Fix
-  // Problem: When I update the fileNode, I am updating current fileNode
-  // When I switch to other tabs, I use their fileNode
-  // When I swtich back to this tab, I get the fresh/brand new fileNode as I am only updating current fileNode
-
   const setContent = useCallback((contentToSet: string) => {
     getTokenCount(contentToSet);
     _setContent(contentToSet);

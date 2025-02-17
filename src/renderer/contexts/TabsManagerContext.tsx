@@ -3,24 +3,19 @@ import {
   PropsWithChildren,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from 'react';
 import { Button } from '@/components/ui/button';
 import { FileNode } from '@/src/types/FileNode';
+import { TabData, TabDataArray } from '@/src/types/TabData';
 
 import { useWorkspaceContext } from './WorkspaceContext';
 import FileProvider from './FileContext';
 
-export type TabData = {
-  id: string;
-  title: string;
-  fileNode: FileNode;
-  content: string;
-  tokenCount: number;
-};
 interface TabsManagerContextProps {
-  tabs: TabData[];
+  tabs: TabDataArray;
   activeTabIndex: number;
   tabsLength: number;
   activeTab: TabData | undefined;
@@ -30,6 +25,7 @@ interface TabsManagerContextProps {
   nextTab: () => void;
   previousTab: () => void;
   setFileNode: (newFileNode: FileNode) => void;
+  setTabTitle: (index: number, title: string) => void;
 }
 
 export const TabsManagerContext = createContext<
@@ -40,10 +36,17 @@ let id = 0;
 
 interface LevelProps {
   fileNode: FileNode;
+  workingDir: string | undefined;
 }
 
-function Level({ children, fileNode }: PropsWithChildren<LevelProps>) {
-  const [tabs, setTabs] = useState<TabData[]>([
+// TODO: Refactor Level. Level is temporary.
+// Level was origianlly created as we were trying to split the context
+function Level({
+  children,
+  fileNode,
+  workingDir,
+}: PropsWithChildren<LevelProps>) {
+  const [tabs, _setTabs] = useState<TabDataArray>([
     {
       id: String(id),
       title: 'Tab',
@@ -61,6 +64,19 @@ function Level({ children, fileNode }: PropsWithChildren<LevelProps>) {
     return tabs[activeTabIndex];
   }, [activeTabIndex, tabs]);
 
+  const setTabs = useCallback(
+    (newTabs: TabDataArray) => {
+      if (workingDir === undefined) {
+        return;
+      }
+      _setTabs(newTabs);
+      if (window.electron.ipcRenderer !== undefined) {
+        window.electron.ipcRenderer.saveWorkspace(workingDir, newTabs);
+      }
+    },
+    [workingDir],
+  );
+
   const setActiveTab = (index: number) => {
     setActiveTabIndex(index);
   };
@@ -68,9 +84,23 @@ function Level({ children, fileNode }: PropsWithChildren<LevelProps>) {
   const closeTab = useCallback(
     (index: number) => {
       const newTabs = tabs.filter((_, i) => i !== index);
+      if (newTabs.length === 0) {
+        id += 1;
+        newTabs.push({
+          id: String(id),
+          title: 'Tab',
+          fileNode: JSON.parse(JSON.stringify(fileNode)),
+          content: '',
+          tokenCount: 0,
+        });
+        return;
+      }
+      if (activeTabIndex >= newTabs.length) {
+        setActiveTabIndex(newTabs.length - 1);
+      }
       setTabs(newTabs);
     },
-    [tabs],
+    [activeTabIndex, fileNode, setTabs, tabs],
   );
 
   const newTab = useCallback(() => {
@@ -80,14 +110,14 @@ function Level({ children, fileNode }: PropsWithChildren<LevelProps>) {
     id += 1;
     const newTabData: TabData = {
       id: String(id),
-      title: 'Tab',
+      title: `Tab ${id}`,
       fileNode: JSON.parse(JSON.stringify(fileNode)),
       content: '',
       tokenCount: 0,
     };
 
     setTabs([...tabs, newTabData]);
-  }, [fileNode, tabs]);
+  }, [fileNode, setTabs, tabs]);
 
   const nextTab = useCallback(() => {
     const nextIndex = (activeTabIndex + 1) % tabsLength;
@@ -108,7 +138,20 @@ function Level({ children, fileNode }: PropsWithChildren<LevelProps>) {
       };
       setTabs(newTabs);
     },
-    [activeTabIndex, tabs],
+    [activeTabIndex, setTabs, tabs],
+  );
+
+  const setTabTitle = useCallback(
+    (index: number, title: string) => {
+      const newTabs = [...tabs];
+
+      newTabs[index] = {
+        ...newTabs[index],
+        title,
+      };
+      setTabs(newTabs);
+    },
+    [setTabs, tabs],
   );
 
   const providerValue = useMemo(
@@ -123,6 +166,7 @@ function Level({ children, fileNode }: PropsWithChildren<LevelProps>) {
       closeTab,
       newTab,
       setFileNode,
+      setTabTitle,
     }),
     [
       activeTab,
@@ -134,8 +178,24 @@ function Level({ children, fileNode }: PropsWithChildren<LevelProps>) {
       setFileNode,
       tabs,
       tabsLength,
+      setTabTitle,
     ],
   );
+
+  useEffect(() => {
+    if (workingDir === undefined) {
+      return;
+    }
+    window.electron.ipcRenderer
+      .loadWorkspace(workingDir)
+      .then((loadedTabs) => {
+        if (loadedTabs !== undefined) {
+          _setTabs(loadedTabs);
+        }
+        return null;
+      })
+      .catch(() => {});
+  }, [workingDir]);
 
   return (
     <TabsManagerContext.Provider value={providerValue}>
@@ -151,7 +211,7 @@ interface TabsManagerProviderProps {}
 export default function TabsManagerProvider({
   children,
 }: PropsWithChildren<TabsManagerProviderProps>) {
-  const { fileNode, setWorkingDir } = useWorkspaceContext();
+  const { fileNode, workingDir, setWorkingDir } = useWorkspaceContext();
 
   const handleClick = async () => {
     const folder = await window.electron.ipcRenderer.selectFolder();
@@ -161,8 +221,13 @@ export default function TabsManagerProvider({
   };
 
   if (fileNode) {
-    return <Level fileNode={fileNode}>{children}</Level>;
+    return (
+      <Level fileNode={fileNode} workingDir={workingDir}>
+        {children}
+      </Level>
+    );
   }
+
   return (
     <Button
       type="button"

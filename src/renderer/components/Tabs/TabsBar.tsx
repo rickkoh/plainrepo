@@ -1,46 +1,23 @@
-import { File, Plus, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
-
-import {
-  TabData,
-  useTabsManagerContext,
-} from '../../contexts/TabsManagerContext';
+import { Plus } from 'lucide-react';
+import { useTabsManagerContext } from '../../contexts/TabsManagerContext';
+import TabButton from './TabButton';
 
 export default function TabsBar() {
-  const { tabs, setActiveTab, activeTabIndex, newTab, closeTab } =
+  const { tabs, setActiveTab, activeTabIndex, newTab, closeTab, setTabTitle } =
     useTabsManagerContext();
 
   return (
     <div className="flex flex-row w-full">
-      {/* TODO: Allow users to rename their tab */}
-      {tabs.map((tab: TabData, index) => (
-        <button
-          // eslint-disable-next-line react/no-array-index-key
+      {tabs.map((tab, index) => (
+        <TabButton
           key={tab.id}
-          type="button"
-          className={cn(
-            'flex flex-row items-center border-b border-background px-4 py-1 space-x-2',
-            index === activeTabIndex && 'border-foreground',
-          )}
-          onClick={(e) => {
-            e.preventDefault();
-            setActiveTab(index);
-          }}
-        >
-          <span>
-            <File className="w-4 h-4" />
-          </span>
-          <p>Tab {tab.id}</p>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              closeTab(index);
-            }}
-          >
-            <X />
-          </button>
-        </button>
+          tab={tab}
+          index={index}
+          isActive={index === activeTabIndex}
+          setActiveTab={setActiveTab}
+          closeTab={closeTab}
+          setTabTitle={setTabTitle}
+        />
       ))}
 
       <button type="button" onClick={newTab} className="ml-2">

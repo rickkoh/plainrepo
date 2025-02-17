@@ -2,6 +2,7 @@
 /* eslint no-unused-vars: off */
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
 import { FileNode } from '../types/FileNode';
+import { TabDataArray } from '../types/TabData';
 
 export type Channels =
   | 'ipc-example'
@@ -38,6 +39,10 @@ const electronHandler = {
       ipcRenderer.invoke('file:get-content', fileNode),
     getTokenCount: (string: string): Promise<string> =>
       ipcRenderer.invoke('file:get-token-count', string),
+    saveWorkspace: (p: string, tabData: TabDataArray): Promise<void> =>
+      ipcRenderer.invoke('workspace:save', p, tabData),
+    loadWorkspace: (p: string): Promise<TabDataArray> =>
+      ipcRenderer.invoke('workspace:load', p),
   },
 };
 

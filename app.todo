@@ -36,6 +36,10 @@ Features:
   ☐ Save state
   ☐ Tabs feature, open multiple tabs.
     ☐ Each tab with it's set of opened files
+    ☐ Improve welcome page UI/UX
+    ☐ Rename tab
+    ☐ Optimise FileContext to use TabData (content, tokenCount)
+  ☐ Persist workspace
 
   ☐ Add 'Consolas' font
   ☐ Darkmode
