@@ -38,10 +38,13 @@ const electronHandler = {
       ipcRenderer.invoke('file:get-content', fileNode),
     getTokenCount: (string: string): Promise<string> =>
       ipcRenderer.invoke('file:get-token-count', string),
-    saveWorkspace: (p: string, tabData: TabDataArray): Promise<void> =>
-      ipcRenderer.invoke('workspace:save', p, tabData),
-    loadWorkspace: (p: string): Promise<TabDataArray> =>
-      ipcRenderer.invoke('workspace:load', p),
+    saveWorkspace: (
+      workspacePath: string,
+      tabData: TabDataArray,
+    ): Promise<void> =>
+      ipcRenderer.invoke('workspace:save', workspacePath, tabData),
+    loadWorkspace: (workspacePath: string): Promise<TabDataArray> =>
+      ipcRenderer.invoke('workspace:load', workspacePath),
     updateAppSettings: (
       settings: unknown,
     ): Promise<{ success: boolean; error?: string }> =>

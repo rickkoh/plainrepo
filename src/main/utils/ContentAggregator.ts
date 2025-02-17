@@ -28,6 +28,9 @@ export default function getContent(rootFileNode: FileNode) {
 
   function readContent(fileNode: FileNode): string {
     if (fileNode.type === 'file' && fileNode.selected) {
+      if (!fs.existsSync(fileNode.path)) {
+        return '';
+      }
       const rawContent = fs.readFileSync(fileNode.path, 'utf-8');
       return `\`\`\`${fileNode.name}\n${applyReplacements(rawContent, replaceList)}\n\`\`\`\n\n`;
     }

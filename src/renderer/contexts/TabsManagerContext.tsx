@@ -9,6 +9,9 @@ import {
 } from 'react';
 import { FileNode } from '@/src/types/FileNode';
 import { TabData, TabDataArray } from '@/src/types/TabData';
+import reconcileFileNode, {
+  buildSavedMap,
+} from '@/src/main/utils/FileReconcilor';
 
 import { useWorkspaceContext } from './WorkspaceContext';
 
@@ -165,10 +168,26 @@ export default function TabsManagerProvider({
   );
 
   useEffect(() => {
-    if (tabsLength === 0) {
-      newTab();
+    if (workingDir && fileNode) {
+      window.electron.ipcRenderer
+        .loadWorkspace(workingDir)
+        .then((prevTabs) => {
+          const reconciledTabs = prevTabs.map((tab) => {
+            const savedMap = buildSavedMap(tab.fileNode);
+            const reconciledFileNode = reconcileFileNode(fileNode, savedMap);
+            return {
+              ...tab,
+              fileNode: reconciledFileNode,
+            };
+          });
+          _setTabs(reconciledTabs);
+          return null;
+        })
+        .catch(() => {
+          return null;
+        });
     }
-  }, [newTab, tabsLength, workingDir]);
+  }, [fileNode, workingDir]);
 
   return (
     <TabsManagerContext.Provider value={providerValue}>
