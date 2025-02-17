@@ -7,7 +7,6 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { Button } from '@/components/ui/button';
 import { FileNode } from '@/src/types/FileNode';
 import { TabData, TabDataArray } from '@/src/types/TabData';
 
@@ -19,6 +18,7 @@ interface TabsManagerContextProps {
   activeTabIndex: number;
   tabsLength: number;
   activeTab: TabData | undefined;
+  canCreateNewTab: boolean;
   setActiveTab: (index: number) => void;
   closeTab: (index: number) => void;
   newTab: () => void;
@@ -34,27 +34,14 @@ export const TabsManagerContext = createContext<
 
 let id = 0;
 
-interface LevelProps {
-  fileNode: FileNode;
-  workingDir: string | undefined;
-}
+interface TabsManagerProviderProps {}
 
-// TODO: Refactor Level. Level is temporary.
-// Level was origianlly created as we were trying to split the context
-function Level({
+export default function TabsManagerProvider({
   children,
-  fileNode,
-  workingDir,
-}: PropsWithChildren<LevelProps>) {
-  const [tabs, _setTabs] = useState<TabDataArray>([
-    {
-      id: String(id),
-      title: 'Tab',
-      fileNode: JSON.parse(JSON.stringify(fileNode)),
-      content: '',
-      tokenCount: 0,
-    },
-  ]);
+}: PropsWithChildren<TabsManagerProviderProps>) {
+  const { fileNode, workingDir } = useWorkspaceContext();
+
+  const [tabs, _setTabs] = useState<TabDataArray>([]);
 
   const tabsLength = useMemo(() => tabs.length, [tabs]);
 
@@ -63,6 +50,8 @@ function Level({
   const activeTab = useMemo(() => {
     return tabs[activeTabIndex];
   }, [activeTabIndex, tabs]);
+
+  const canCreateNewTab = useMemo(() => fileNode !== undefined, [fileNode]);
 
   const setTabs = useCallback(
     (newTabs: TabDataArray) => {
@@ -85,14 +74,14 @@ function Level({
     (index: number) => {
       const newTabs = tabs.filter((_, i) => i !== index);
       if (newTabs.length === 0) {
-        id += 1;
-        newTabs.push({
-          id: String(id),
-          title: 'Tab',
-          fileNode: JSON.parse(JSON.stringify(fileNode)),
-          content: '',
-          tokenCount: 0,
-        });
+        // id += 1;
+        // newTabs.push({
+        //   id: String(id),
+        //   title: 'Tab',
+        //   fileNode: JSON.parse(JSON.stringify(fileNode)),
+        //   content: '',
+        //   tokenCount: 0,
+        // });
         return;
       }
       if (activeTabIndex >= newTabs.length) {
@@ -100,11 +89,11 @@ function Level({
       }
       setTabs(newTabs);
     },
-    [activeTabIndex, fileNode, setTabs, tabs],
+    [activeTabIndex, setTabs, tabs],
   );
 
   const newTab = useCallback(() => {
-    if (fileNode === undefined) {
+    if (!canCreateNewTab) {
       return;
     }
     id += 1;
@@ -117,7 +106,7 @@ function Level({
     };
 
     setTabs([...tabs, newTabData]);
-  }, [fileNode, setTabs, tabs]);
+  }, [canCreateNewTab, fileNode, setTabs, tabs]);
 
   const nextTab = useCallback(() => {
     const nextIndex = (activeTabIndex + 1) % tabsLength;
@@ -160,6 +149,7 @@ function Level({
       activeTabIndex,
       tabsLength,
       activeTab,
+      canCreateNewTab,
       setActiveTab,
       nextTab,
       previousTab,
@@ -169,73 +159,50 @@ function Level({
       setTabTitle,
     }),
     [
-      activeTab,
+      tabs,
       activeTabIndex,
-      closeTab,
-      newTab,
+      tabsLength,
+      activeTab,
+      canCreateNewTab,
       nextTab,
       previousTab,
+      closeTab,
+      newTab,
       setFileNode,
-      tabs,
-      tabsLength,
       setTabTitle,
     ],
   );
 
   useEffect(() => {
-    if (workingDir === undefined) {
-      return;
+    // if (true) {
+    // }
+    // if (workingDir === undefined) {
+    //   return;
+    // }
+    // window.electron.ipcRenderer
+    //   .loadWorkspace(workingDir)
+    //   .then((loadedTabs) => {
+    //     if (loadedTabs !== undefined) {
+    //       _setTabs(loadedTabs);
+    //     }
+    //     return null;
+    //   })
+    //   .catch(() => {});
+
+    if (tabsLength === 0) {
+      newTab();
     }
-    window.electron.ipcRenderer
-      .loadWorkspace(workingDir)
-      .then((loadedTabs) => {
-        if (loadedTabs !== undefined) {
-          _setTabs(loadedTabs);
-        }
-        return null;
-      })
-      .catch(() => {});
-  }, [workingDir]);
+  }, [newTab, tabsLength, workingDir]);
 
   return (
     <TabsManagerContext.Provider value={providerValue}>
-      <FileProvider fileNode={activeTab.fileNode} setFileNode={setFileNode}>
+      <FileProvider
+        fileNode={activeTab ? activeTab.fileNode : undefined}
+        setFileNode={setFileNode}
+      >
         {children}
       </FileProvider>
     </TabsManagerContext.Provider>
-  );
-}
-
-interface TabsManagerProviderProps {}
-
-export default function TabsManagerProvider({
-  children,
-}: PropsWithChildren<TabsManagerProviderProps>) {
-  const { fileNode, workingDir, setWorkingDir } = useWorkspaceContext();
-
-  const handleClick = async () => {
-    const folder = await window.electron.ipcRenderer.selectFolder();
-    if (folder) {
-      setWorkingDir(folder);
-    }
-  };
-
-  if (fileNode) {
-    return (
-      <Level fileNode={fileNode} workingDir={workingDir}>
-        {children}
-      </Level>
-    );
-  }
-
-  return (
-    <Button
-      type="button"
-      className="px-4 py-2 text-primary-foreground bg-primary rounded-md"
-      onClick={handleClick}
-    >
-      Open Folder
-    </Button>
   );
 }
 

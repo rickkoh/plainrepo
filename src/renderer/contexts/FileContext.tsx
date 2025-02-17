@@ -24,7 +24,7 @@ export const FileContext = createContext<FileContextProps | undefined>(
 );
 
 interface FileProviderProps {
-  fileNode: FileNode;
+  fileNode?: FileNode;
   setFileNode: (fileNode: FileNode) => void;
 }
 
@@ -83,7 +83,7 @@ export default function FileProvider({
   );
 
   useEffect(() => {
-    if (autoSync) {
+    if (autoSync && fileNode) {
       getContent(fileNode);
     }
   }, [autoSync, fileNode, getContent]);
@@ -107,6 +107,10 @@ export default function FileProvider({
     </FileContext.Provider>
   );
 }
+
+FileProvider.defaultProps = {
+  fileNode: undefined,
+};
 
 export function useFileContext() {
   const context = useContext(FileContext);

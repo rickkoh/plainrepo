@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { FileNodeSchema } from './FileNode';
+import { FileNode, FileNodeSchema } from './FileNode';
 
 export const TabDataSchema = z.object({
   id: z.string(),
@@ -11,5 +11,11 @@ export const TabDataSchema = z.object({
 
 export const TabDataArraySchema = z.array(TabDataSchema);
 
-export type TabData = z.infer<typeof TabDataSchema>;
-export type TabDataArray = z.infer<typeof TabDataArraySchema>;
+export type TabData = {
+  id: string;
+  title: string;
+  fileNode: FileNode;
+  content: string;
+  tokenCount: number;
+};
+export type TabDataArray = TabData[];

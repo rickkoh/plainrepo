@@ -58,21 +58,6 @@ ipcMain.on('set-root-dir', async (event, arg) => {
   event.reply('root-dir-set', directoryTree);
 });
 
-ipcMain.on('toggle-dark-mode', async (event, arg) => {
-  console.log('attempting to toggle-dark-mode', arg);
-
-  // TODO: Set literal true to arg. Ensure arg is a boolean
-  if (arg) {
-    writeAppSettings({ darkMode: true });
-  } else {
-    writeAppSettings({ darkMode: false });
-  }
-
-  if (mainWindow) {
-    mainWindow.webContents.send('toggle-dark-mode', arg);
-  }
-});
-
 ipcMain.on('set-app-settings', async (event, arg) => {
   console.log('attempting to write-user-data', arg);
   writeAppSettings(arg);
@@ -202,11 +187,7 @@ const createWindow = async () => {
     if (!mainWindow) {
       return null;
     }
-
-    console.log('attempting to save-file');
-    console.log('arg1', arg1);
-    console.log('arg2', arg2);
-
+    console.log('attempting to save workspace');
     const parsedArg1 = z.string().parse(arg1);
     const parsedArg2 = TabDataArraySchema.parse(arg2);
 
@@ -219,14 +200,9 @@ const createWindow = async () => {
     if (!mainWindow) {
       return null;
     }
-
-    console.log('attempting to open-file');
-    console.log('arg', arg);
-
+    console.log('attempting to load workspace');
     const parsedArg = z.string().parse(arg);
-
     const tabData = loadWorkspace(parsedArg);
-
     return tabData;
   });
 

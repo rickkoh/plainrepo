@@ -21,10 +21,8 @@ export default function TabButton({
   setTabTitle,
 }: TabButtonProps) {
   const [isEditing, setIsEditing] = useState(false);
-  // Local state to hold the temporary title while editing.
   const [tempTitle, setTempTitle] = useState(tab.title);
 
-  // Activate edit mode on double-click.
   const handleDoubleClick = (e: React.MouseEvent<HTMLParagraphElement>) => {
     e.stopPropagation();
     setIsEditing(true);
@@ -32,13 +30,11 @@ export default function TabButton({
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Escape' || tempTitle.trim() === '') {
-      // Revert to the original title.
       setTempTitle(tab.title);
       setIsEditing(false);
       return;
     }
     if (e.key === 'Enter') {
-      // Save the new title.
       setTabTitle(index, tempTitle);
       setIsEditing(false);
     }
@@ -50,7 +46,8 @@ export default function TabButton({
       type="button"
       className={cn(
         'flex flex-row items-center border-b border-background px-4 py-1 space-x-2',
-        isActive && 'border-foreground',
+        isActive && 'border-border',
+        'group hover:bg-muted',
       )}
       onClick={(e) => {
         e.preventDefault();
@@ -80,8 +77,13 @@ export default function TabButton({
           e.stopPropagation();
           closeTab(index);
         }}
+        className={cn(
+          'invisible text-muted-foreground',
+          'group-hover:visible',
+          'hover:text-foreground',
+        )}
       >
-        <X />
+        <X className="w-4 h-4" />
       </button>
     </button>
   );

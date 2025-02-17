@@ -39,26 +39,30 @@ export default function AppProvider({
   const [replace, _setReplace] = useState<ReplaceList>([]);
 
   const toggleDarkMode = useCallback(() => {
-    window.electron.ipcRenderer.sendMessage('toggle-dark-mode', !isDarkMode);
+    appSettings.current = { ...appSettings.current, darkMode: !isDarkMode };
+    window.electron.ipcRenderer.sendMessage(
+      'set-app-settings',
+      appSettings.current,
+    );
     setIsDarkMode((prev) => !prev);
   }, [isDarkMode]);
 
   const setExclude = (newExcludeList: ExcludeList) => {
-    _setExclude(newExcludeList);
     appSettings.current = { ...appSettings.current, exclude: newExcludeList };
     window.electron.ipcRenderer.sendMessage(
       'set-app-settings',
       appSettings.current,
     );
+    _setExclude(newExcludeList);
   };
 
   const setReplace = (newReplaceList: ReplaceList) => {
-    _setReplace(newReplaceList);
     appSettings.current = { ...appSettings.current, replace: newReplaceList };
     window.electron.ipcRenderer.sendMessage(
       'set-app-settings',
       appSettings.current,
     );
+    _setReplace(newReplaceList);
   };
 
   const providerValue = useMemo(
