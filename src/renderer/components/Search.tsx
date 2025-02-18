@@ -31,7 +31,13 @@ function updateFileNodeAtPath(
     checked,
   );
 
-  return { ...node, children: newChildren };
+  const anyChildSelected = newChildren.some((child) => child.selected);
+
+  return {
+    ...node,
+    children: newChildren,
+    selected: anyChildSelected,
+  };
 }
 
 export default function Search() {
