@@ -1,109 +1,89 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { BaseFileNode, FileNode } from '@/src/types/FileNode';
 import { Checkbox } from '@/components/ui/checkbox';
 import { CheckedState } from '@radix-ui/react-checkbox';
 import { useFileContext } from '../contexts/FileContext';
 
-interface SearchedFileNode extends BaseFileNode {
-  numberPath: number[];
+interface MatchedFileNode extends BaseFileNode {
+  indexPath: number[];
+}
+
+// Helper function
+function updateFileNodeAtPath(
+  node: FileNode,
+  indexPath: number[],
+  checked: CheckedState,
+): FileNode {
+  if (indexPath.length === 0) {
+    return { ...node, selected: checked === 'indeterminate' ? false : checked };
+  }
+
+  const index = indexPath[0];
+  if (!node.children || index >= node.children.length) {
+    return node;
+  }
+
+  const newChildren = [...node.children];
+
+  newChildren[index] = updateFileNodeAtPath(
+    newChildren[index],
+    indexPath.slice(1),
+    checked,
+  );
+
+  return { ...node, children: newChildren };
 }
 
 export default function Search() {
   const { fileNode, setFileNode } = useFileContext();
 
-  const [filterName, _setFilterName] = useState<string>('');
-
-  const [searchedFileNodes, setSearchedFileNodes] =
-    useState<SearchedFileNode[]>();
-
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectAll, setSelectAll] = useState<CheckedState>(false);
 
-  const setFilterName = useCallback(
-    (tempFilterName: string) => {
-      _setFilterName(tempFilterName);
+  const filteredNodes = useMemo(() => {
+    if (!searchQuery || searchQuery.trim() === '' || !fileNode) {
+      return [];
+    }
 
-      if (tempFilterName === '') {
-        setSearchedFileNodes([]);
+    const matchingNodes: MatchedFileNode[] = [];
+
+    const buildMatchingNodes = (node: FileNode, indexPath: number[]) => {
+      if (!node.children) {
         return;
       }
-
-      if (fileNode === undefined) {
-        return;
-      }
-
-      const tempSearchedFileNodes: SearchedFileNode[] = [];
-
-      const traverse = async (node: FileNode, numberPath: number[]) => {
-        if (node.children === undefined) {
-          return;
-        }
-
-        node.children.forEach(async (child, i) => {
-          const tempNumberPath = [...numberPath, i];
-
-          if (
-            child.type !== 'directory' &&
-            child.name.toLowerCase().includes(tempFilterName.toLowerCase())
-          ) {
-            const searchedFileNode: SearchedFileNode = {
-              ...child,
-              numberPath: tempNumberPath,
-            };
-            tempSearchedFileNodes.push(searchedFileNode);
-          }
-
-          await traverse(child, tempNumberPath);
-        });
-      };
-
-      traverse(fileNode, []);
-      setSearchedFileNodes(tempSearchedFileNodes);
-    },
-    [fileNode],
-  );
-
-  const handleOnCheckedChange = useCallback(
-    (
-      checked: CheckedState,
-      index: number,
-      searchedFileNode: SearchedFileNode,
-    ) => {
-      if (searchedFileNodes === undefined) {
-        return;
-      }
-
-      const newSearchedFileNodes = [...searchedFileNodes];
-      newSearchedFileNodes[index].selected =
-        checked === 'indeterminate' ? false : checked;
-      setSearchedFileNodes(newSearchedFileNodes);
-
-      if (fileNode === undefined) {
-        return;
-      }
-
-      let tempFileNode = fileNode;
-      const { numberPath } = searchedFileNode;
-      for (let i = 0; i < numberPath.length; i += 1) {
+      node.children.forEach((child, i) => {
+        const childPath = [...indexPath, i];
         if (
-          tempFileNode.children === undefined ||
-          numberPath[i] >= tempFileNode.children.length
+          child.type !== 'directory' &&
+          child.name.toLowerCase().includes(searchQuery.toLowerCase()) // Search case-insensitive
         ) {
-          return;
+          const matchedNode: MatchedFileNode = {
+            ...child,
+            indexPath: childPath,
+          };
+          matchingNodes.push(matchedNode);
         }
+        buildMatchingNodes(child, childPath);
+      });
+    };
 
-        const child = tempFileNode.children[numberPath[i]];
+    buildMatchingNodes(fileNode, []);
+    return matchingNodes;
+  }, [fileNode, searchQuery]);
 
-        if (child === undefined) {
-          return;
-        }
-
-        child.selected = checked === 'indeterminate' ? false : checked;
-
-        tempFileNode = child;
+  const handleCheckboxChange = useCallback(
+    (checked: CheckedState, matchedFileNode: MatchedFileNode) => {
+      if (!fileNode) {
+        return;
       }
-      setFileNode({ ...fileNode });
+      const updatedFileTree = updateFileNodeAtPath(
+        fileNode,
+        matchedFileNode.indexPath,
+        checked,
+      );
+      setFileNode(updatedFileTree);
     },
-    [fileNode, searchedFileNodes, setFileNode],
+    [fileNode, setFileNode],
   );
 
   return (
@@ -113,12 +93,12 @@ export default function Search() {
         <input
           className="px-1 border bg-background text-foreground placeholder:text-foreground border-accent focus:rounded-none"
           placeholder="Search for file"
-          value={filterName}
-          onChange={(e) => setFilterName(e.target.value)}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
         />
       </div>
       <div>
-        {searchedFileNodes && searchedFileNodes.length > 0 ? (
+        {filteredNodes && filteredNodes.length > 0 ? (
           <div className="flex flex-col space-y-2">
             <div className="flex flex-row items-center px-4 space-x-2">
               <button
@@ -129,23 +109,21 @@ export default function Search() {
                 Select all
               </button>
             </div>
-            {searchedFileNodes.map((searchedFileNode, index) => (
+            {filteredNodes.map((matchedNode) => (
               <div
-                key={searchedFileNode.path}
+                key={matchedNode.path}
                 className="flex flex-row items-center px-4 space-x-2 hover:bg-accent"
               >
                 <Checkbox
-                  id={searchedFileNode.path}
-                  checked={searchedFileNode.selected}
+                  id={matchedNode.path}
+                  checked={matchedNode.selected}
                   onCheckedChange={(checked) =>
-                    handleOnCheckedChange(checked, index, searchedFileNode)
+                    handleCheckboxChange(checked, matchedNode)
                   }
                 />
-                <label htmlFor={searchedFileNode.path}>
-                  {searchedFileNode.name}
-                </label>
+                <label htmlFor={matchedNode.path}>{matchedNode.name}</label>
                 <p className="text-sm text-muted-foreground">
-                  {searchedFileNode.path}
+                  {matchedNode.path}
                 </p>
               </div>
             ))}
