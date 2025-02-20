@@ -35,8 +35,6 @@ export const TabsManagerContext = createContext<
   TabsManagerContextProps | undefined
 >(undefined);
 
-let id = 0;
-
 interface TabsManagerProviderProps {}
 
 export default function TabsManagerProvider({
@@ -91,7 +89,16 @@ export default function TabsManagerProvider({
     if (!canCreateNewTab) {
       return;
     }
-    id += 1;
+
+    // Build a set of used IDs for O(1) lookups.
+    const usedIds = new Set(tabs.map((tab) => Number(tab.id)));
+
+    // Find the smallest missing positive integer.
+    let id = 1;
+    while (usedIds.has(id)) {
+      id += 1;
+    }
+
     const newTabData: TabData = {
       id: String(id),
       title: `Tab ${id}`,
@@ -209,7 +216,7 @@ export default function TabsManagerProvider({
     if (workingDir && fileNode) {
       window.electron.ipcRenderer
         .loadWorkspace(workingDir)
-        .then((prevTabs) => {
+        .then(async (prevTabs) => {
           const reconciledTabs = prevTabs.map((tab) => {
             const savedMap = buildSavedMap(tab.fileNode);
             const reconciledFileNode = reconcileFileNode(fileNode, savedMap);
@@ -225,7 +232,7 @@ export default function TabsManagerProvider({
           return null;
         });
     }
-  }, [fileNode, workingDir]);
+  }, [autoSync, fileNode, workingDir]);
 
   return (
     <TabsManagerContext.Provider value={providerValue}>
