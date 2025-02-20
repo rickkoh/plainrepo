@@ -2,7 +2,6 @@ import { FileNode, FileNodeSchema } from '@/src/types/FileNode';
 import {
   createContext,
   PropsWithChildren,
-  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -41,14 +40,14 @@ export default function WorkspaceProvider({
     return workingDir ? workingDir.split('/').pop() : '';
   }, [workingDir]);
 
-  const setWorkingDir = useCallback((path: string) => {
+  const setWorkingDir = (path: string) => {
     window.electron.ipcRenderer.sendMessage('set-root-dir', path);
     _setWorkingDir(path);
-  }, []);
+  };
 
-  const setAutoSync = useCallback((newAutoSync: boolean) => {
+  const setAutoSync = (newAutoSync: boolean) => {
     _setAutoSync(newAutoSync);
-  }, []);
+  };
 
   const providerValue = useMemo(
     () => ({
@@ -61,15 +60,7 @@ export default function WorkspaceProvider({
       filterName,
       setFilterName,
     }),
-    [
-      workingDir,
-      setWorkingDir,
-      workingDirName,
-      originalFileNode,
-      autoSync,
-      setAutoSync,
-      filterName,
-    ],
+    [workingDir, workingDirName, originalFileNode, autoSync, filterName],
   );
 
   const handleRootDirSet = (arg: unknown) => {
