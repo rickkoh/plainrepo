@@ -20,15 +20,15 @@ export default function FileProvider({
 
   const fileNode = useMemo(() => {
     return activeTab?.fileNode;
-  }, [activeTab]);
+  }, [activeTab?.fileNode]);
 
   const content = useMemo(() => {
     return activeTab?.content;
-  }, [activeTab]);
+  }, [activeTab?.content]);
 
   const tokenCount = useMemo(() => {
     return activeTab?.tokenCount;
-  }, [activeTab]);
+  }, [activeTab?.tokenCount]);
 
   const providerValue = useMemo(
     () => ({

@@ -130,16 +130,27 @@ export default function TabsManagerProvider({
     async (newFileNode: FileNode) => {
       const newTabs = [...tabs];
 
+      let { content, tokenCount } = newTabs[activeTabIndex];
+
+      if (autoSync) {
+        content = await window.electron.ipcRenderer.getContent(newFileNode);
+        tokenCount = Number(
+          await window.electron.ipcRenderer.getTokenCount(content),
+        );
+      }
+
       newTabs[activeTabIndex] = {
         ...newTabs[activeTabIndex],
         fileNode: newFileNode,
+        content,
+        tokenCount,
       };
       setTabs(newTabs);
     },
-    [activeTabIndex, setTabs, tabs],
+    [activeTabIndex, autoSync, setTabs, tabs],
   );
 
-  const refreshed = useRef(false);
+  const prevAutoSyncRef = useRef(false);
 
   const refreshTab = useCallback(async () => {
     const newTabs = [...tabs];
@@ -158,12 +169,10 @@ export default function TabsManagerProvider({
   }, [activeTabIndex, setTabs, tabs]);
 
   useEffect(() => {
-    if (autoSync && !refreshed.current) {
+    if (autoSync && !prevAutoSyncRef.current) {
       refreshTab();
-      refreshed.current = true;
-    } else {
-      refreshed.current = false;
     }
+    prevAutoSyncRef.current = !!autoSync;
   }, [autoSync, refreshTab]);
 
   const providerValue = useMemo(

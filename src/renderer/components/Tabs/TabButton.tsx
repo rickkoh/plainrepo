@@ -41,17 +41,20 @@ export default function TabButton({
   };
 
   return (
-    <button
+    <div
       key={tab.id}
-      type="button"
+      role="button"
+      tabIndex={0}
       className={cn(
         'flex flex-row items-center border-b border-background px-4 py-1 space-x-2',
         isActive && 'border-border',
         'group hover:bg-muted',
       )}
-      onClick={(e) => {
-        e.preventDefault();
-        setActiveTab(index);
+      onClick={() => setActiveTab(index)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          setActiveTab(index);
+        }
       }}
     >
       <span>
@@ -85,6 +88,6 @@ export default function TabButton({
       >
         <X className="w-4 h-4" />
       </button>
-    </button>
+    </div>
   );
 }
