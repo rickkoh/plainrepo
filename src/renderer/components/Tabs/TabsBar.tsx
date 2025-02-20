@@ -28,7 +28,7 @@ export default function TabsBar() {
       ))}
 
       {canCreateNewTab && (
-        <button type="button" onClick={newTab} className="ml-2">
+        <button type="button" onClick={newTab} className="py-1 ml-2">
           <Plus />
         </button>
       )}
