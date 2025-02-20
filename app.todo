@@ -9,18 +9,13 @@ Features:
     ✔ State @done(25-02-15 13:26)
     ✔ Current path @done(25-02-15 13:26)
     ✔ Hover effects @done(25-02-15 13:26)
-  ☐ Autosync state, Autosync on, off, syncing
-  ☐ Better naming for the variables in fileContext
+  ✔ Better naming for the variables in fileContext
     ✔ onStructureChange @done(25-02-14 16:13)
     ✔ workspace @started(25-02-03 22:39) @done(25-02-03 22:39) @lasted(19s)
-    ☐ Set root path, should it be called root path? (maybe workingDir)
+    ✔ Set root path, should it be called root path? (maybe workingDir)
   ✔ Fs handle try catch @done(25-02-15 13:26)
-  ☐ Search
-    ✔ Search for file @done(25-02-15 13:26)
-    ☐ Goto file
-    ☐ Search for content
-    ☐ Jump to content
-  ☐ Loading while fs is reading
+  ☐ Autosync state, Autosync on, off, syncing
+  ☐ Workspace should watch for file changes
   ☐ Settings page
     ✔ Ignore folders/files @done(25-02-10 01:27)
     ✔ Darkmode @done(25-02-10 01:27)
@@ -29,20 +24,30 @@ Features:
     ☐ Edit list item component
   ☐ Menu
     ☐ File (open)
+  ☐ Better copy
+    ☐ Copy directory tree only
+    ☐ Copy content only
+    ☐ Copy everything
+  ✔ Collapse hide and show only selected files @done(25-02-15 13:25)
+  ✔ Save state
+  ✔ Tabs feature, open multiple tabs.
+    ✔ Each tab with it's set of opened files
+    ✔ Improve welcome page UI/UX
+    ✔ Rename tab
+    ☐ Optimise FileContext to use TabData (content, tokenCount)
+  ✔ Persist workspace
+  ✔ Darkmode
+  ✔ Search
+    ✔ Search for file @done(25-02-15 13:26)
+    ☐ Goto file
+    ☐ Search for content
+    ☐ Jump to content
   ☐ Content
     ☐ Indentation
     ☐ Line numbers
-  ✔ Collapse hide and show only selected files @done(25-02-15 13:25)
-  ☐ Save state
-  ☐ Tabs feature, open multiple tabs.
-    ☐ Each tab with it's set of opened files
-    ☐ Improve welcome page UI/UX
-    ☐ Rename tab
-    ☐ Optimise FileContext to use TabData (content, tokenCount)
-  ☐ Persist workspace
+  ☐ Loading while fs is reading
 
   ☐ Add 'Consolas' font
-  ☐ Darkmode
 
 Landing Page:
   ☐ Release first version of the app
@@ -58,7 +63,7 @@ Landing Page:
 
 Bugs:
   ✔ If one is selected, parent checkmark should be checked @done(25-02-15 13:26)
-  ☐ Search list's selected item doesn't get updated
+  ✔ Search list's selected item doesn't get updated
   ☐ Exclude list delete edit button doesn't work
   ☐ ZodError when changing directory
   ☐ Add tailwind to gitignore, ignore in build

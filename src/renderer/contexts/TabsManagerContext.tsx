@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import { FileNode } from '@/src/types/FileNode';
@@ -26,8 +27,8 @@ interface TabsManagerContextProps {
   newTab: () => void;
   nextTab: () => void;
   previousTab: () => void;
-  setFileNode: (newFileNode: FileNode) => void;
   setTabTitle: (index: number, title: string) => void;
+  setFileNode: (newFileNode: FileNode) => void;
 }
 
 export const TabsManagerContext = createContext<
@@ -41,7 +42,7 @@ interface TabsManagerProviderProps {}
 export default function TabsManagerProvider({
   children,
 }: PropsWithChildren<TabsManagerProviderProps>) {
-  const { fileNode, workingDir } = useWorkspaceContext();
+  const { fileNode, autoSync, workingDir } = useWorkspaceContext();
 
   const [tabs, _setTabs] = useState<TabDataArray>([]);
 
@@ -112,18 +113,6 @@ export default function TabsManagerProvider({
     setActiveTabIndex(prevIndex);
   }, [activeTabIndex, tabsLength]);
 
-  const setFileNode = useCallback(
-    (newFileNode: FileNode) => {
-      const newTabs = [...tabs];
-      newTabs[activeTabIndex] = {
-        ...newTabs[activeTabIndex],
-        fileNode: newFileNode,
-      };
-      setTabs(newTabs);
-    },
-    [activeTabIndex, setTabs, tabs],
-  );
-
   const setTabTitle = useCallback(
     (index: number, title: string) => {
       const newTabs = [...tabs];
@@ -137,6 +126,55 @@ export default function TabsManagerProvider({
     [setTabs, tabs],
   );
 
+  const setFileNode = useCallback(
+    async (newFileNode: FileNode) => {
+      const newTabs = [...tabs];
+
+      let { content, tokenCount } = newTabs[activeTabIndex];
+
+      if (autoSync) {
+        content = await window.electron.ipcRenderer.getContent(newFileNode);
+        tokenCount = Number(
+          await window.electron.ipcRenderer.getTokenCount(content),
+        );
+      }
+
+      newTabs[activeTabIndex] = {
+        ...newTabs[activeTabIndex],
+        fileNode: newFileNode,
+        content,
+        tokenCount,
+      };
+      setTabs(newTabs);
+    },
+    [activeTabIndex, autoSync, setTabs, tabs],
+  );
+
+  const prevAutoSyncRef = useRef(false);
+
+  const refreshTab = useCallback(async () => {
+    const newTabs = [...tabs];
+    const content = await window.electron.ipcRenderer.getContent(
+      newTabs[activeTabIndex].fileNode,
+    );
+    const tokenCount = Number(
+      await window.electron.ipcRenderer.getTokenCount(content),
+    );
+    newTabs[activeTabIndex] = {
+      ...newTabs[activeTabIndex],
+      content,
+      tokenCount,
+    };
+    setTabs(newTabs);
+  }, [activeTabIndex, setTabs, tabs]);
+
+  useEffect(() => {
+    if (autoSync && !prevAutoSyncRef.current) {
+      refreshTab();
+    }
+    prevAutoSyncRef.current = !!autoSync;
+  }, [autoSync, refreshTab]);
+
   const providerValue = useMemo(
     () => ({
       tabs,
@@ -149,8 +187,8 @@ export default function TabsManagerProvider({
       previousTab,
       closeTab,
       newTab,
-      setFileNode,
       setTabTitle,
+      setFileNode,
     }),
     [
       tabs,
@@ -162,8 +200,8 @@ export default function TabsManagerProvider({
       previousTab,
       closeTab,
       newTab,
-      setFileNode,
       setTabTitle,
+      setFileNode,
     ],
   );
 
