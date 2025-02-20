@@ -42,7 +42,14 @@ function SettingsItemContent({
 }
 
 export default function Settings() {
-  const { exclude, setExclude, replace, setReplace } = useAppContext();
+  const {
+    shouldIncludeGitIgnore,
+    setShouldIncludeGitIgnore,
+    exclude,
+    setExclude,
+    replace,
+    setReplace,
+  } = useAppContext();
 
   const [newExcludeText, setNewExcludeText] = useState<ExcludeItem>('');
 
@@ -152,7 +159,15 @@ export default function Settings() {
           <SettingsItemHeader>
             Explorer: <b>Include gitignore</b>
           </SettingsItemHeader>
-          <Checkbox id="includeGitIgnore" />
+          <Checkbox
+            id="includeGitIgnore"
+            checked={shouldIncludeGitIgnore}
+            onCheckedChange={(checkedState) =>
+              setShouldIncludeGitIgnore(
+                checkedState === 'indeterminate' ? false : checkedState,
+              )
+            }
+          />
           <label
             htmlFor="includeGitIgnore"
             className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"

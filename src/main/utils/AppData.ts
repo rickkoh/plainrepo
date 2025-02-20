@@ -55,7 +55,7 @@ export function loadWorkspace(projectPathStr: string): TabDataArray {
   const workspaceFilePath = path.join(projectDir, WORKSPACE_FILENAME);
 
   if (!fs.existsSync(workspaceFilePath)) {
-    throw new Error(`Workspace file not found at ${workspaceFilePath}`);
+    return [];
   }
 
   const fileContents = fs.readFileSync(workspaceFilePath, 'utf8');

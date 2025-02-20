@@ -23,6 +23,8 @@ const updateAppSettings = (settings: AppSettings) => {
 interface AppContextProps {
   isDarkMode: boolean;
   toggleDarkMode: () => void;
+  shouldIncludeGitIgnore: boolean;
+  setShouldIncludeGitIgnore: (shouldIncludeGitIgnore: boolean) => void;
   exclude: ExcludeList;
   setExclude: (excludeList: ExcludeList) => void;
   replace: ReplaceList;
@@ -50,6 +52,18 @@ export default function AppProvider({
     updateAppSettings(newSettings);
   }, [appSettings]);
 
+  const setShouldIncludeGitIgnore = useCallback(
+    (shouldIncludeGitIgnore: boolean) => {
+      const newSettings = {
+        ...appSettings,
+        shouldIncludeGitIgnore,
+      };
+      setAppSettings(newSettings);
+      updateAppSettings(newSettings);
+    },
+    [appSettings],
+  );
+
   const setExclude = useCallback(
     (newExclude: ExcludeList) => {
       const newSettings = { ...appSettings, exclude: newExclude };
@@ -71,6 +85,11 @@ export default function AppProvider({
   const isDarkMode = useMemo(
     () => appSettings.darkMode ?? false,
     [appSettings.darkMode],
+  );
+
+  const shouldIncludeGitIgnore = useMemo(
+    () => appSettings.shouldIncludeGitIgnore ?? false,
+    [appSettings.shouldIncludeGitIgnore],
   );
 
   const exclude = useMemo(
@@ -102,12 +121,23 @@ export default function AppProvider({
     () => ({
       isDarkMode,
       toggleDarkMode,
+      shouldIncludeGitIgnore,
+      setShouldIncludeGitIgnore,
       exclude,
       setExclude,
       replace,
       setReplace,
     }),
-    [isDarkMode, toggleDarkMode, exclude, setExclude, replace, setReplace],
+    [
+      isDarkMode,
+      toggleDarkMode,
+      shouldIncludeGitIgnore,
+      setShouldIncludeGitIgnore,
+      exclude,
+      setExclude,
+      replace,
+      setReplace,
+    ],
   );
 
   return (
