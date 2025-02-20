@@ -1,6 +1,7 @@
 import { Dirent } from 'node:fs';
 import { FileNode, FileNodes } from '../../types/FileNode';
 import { readAppSettings } from './AppSettings';
+import { applyReplacements } from './Replacer';
 
 /* eslint-disable no-console */
 const fs = require('fs');
@@ -8,7 +9,6 @@ const path = require('path');
 
 export function buildFileNode(rootDir: string): FileNode {
   const appSettings = readAppSettings();
-
   const excludePatterns = appSettings.exclude || [];
 
   console.log('Excluding patterns:', excludePatterns);
@@ -64,6 +64,9 @@ export function buildFileNode(rootDir: string): FileNode {
 }
 
 export function generateFileTree(node: FileNode, indent: string = ''): string {
+  const appSettings = readAppSettings();
+  const replaceList = appSettings.replace || [];
+
   let result = indent === '' ? '.\n' : '';
 
   if (node.children && node.children.length > 0) {
@@ -72,7 +75,7 @@ export function generateFileTree(node: FileNode, indent: string = ''): string {
       const isLastChild = i === node.children.length - 1;
       const prefix = isLastChild ? '└── ' : '├── ';
       if (child.selected) {
-        result += `${indent}${prefix}${child.name}\n`;
+        result += `${indent}${prefix}${applyReplacements(child.name, replaceList)}\n`;
       }
       if (child.type === 'directory') {
         result += generateFileTree(
