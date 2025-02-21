@@ -62,14 +62,14 @@ const EditableListItem = forwardRef<HTMLInputElement, EditableListItemProps>(
           <button
             type="button"
             onClick={handleConfirmEdit}
-            className="bg-accent text-accent-foreground px-2 py-0"
+            className="bg-accent text-accent-foreground px-2 py-0 hover:bg-muted hover:text-muted-foreground"
           >
             Ok
           </button>
           <button
             type="button"
             onClick={handleCancelEdit}
-            className="bg-accent text-accent-foreground px-2 py-0"
+            className="bg-accent text-accent-foreground px-2 py-0 hover:bg-muted hover:text-muted-foreground"
           >
             Cancel
           </button>
