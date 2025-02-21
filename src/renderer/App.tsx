@@ -6,6 +6,8 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from '@/components/ui/resizable';
+import { Toaster } from '@/components/ui/sonner';
+
 import Toolbar from './components/Toolbar';
 import Sidebar from './components/Sidebar';
 import AppProvider from './contexts/AppContext';
@@ -38,6 +40,7 @@ function Hello() {
           </TabsManagerProvider>
         </WorkspaceProvider>
       </AppProvider>
+      <Toaster position="top-right" />
     </main>
   );
 }
