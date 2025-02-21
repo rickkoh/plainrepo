@@ -1,11 +1,12 @@
 /* eslint-disable jsx-a11y/label-has-associated-control */
 import { Button } from '@/components/ui/button';
-import { Edit2, MoveRight, X } from 'lucide-react';
+import { MoveRight, X } from 'lucide-react';
 import { PropsWithChildren, useCallback, useState } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ExcludeItem, ReplaceItem } from '@/src/types/AppSettings';
 
 import { useAppContext } from '../contexts/AppContext';
+import EditableListItem from './Forms/EditableListItem';
 
 interface SettingsItemProps {}
 
@@ -68,6 +69,12 @@ export default function Settings() {
     setExclude(setSet);
   }
 
+  function handleEditExclude(index: number, newText: string) {
+    const setSet = [...exclude];
+    setSet[index] = newText;
+    setExclude(setSet);
+  }
+
   function handleAddExclude() {
     setExclude([...exclude, newExcludeText]);
     setNewExcludeText('');
@@ -107,19 +114,16 @@ export default function Settings() {
           </SettingsItemDescription>
           <SettingsItemContent>
             {exclude.map((item, i) => (
-              <li
+              <EditableListItem
                 // eslint-disable-next-line react/no-array-index-key
                 key={item + i}
-                className="flex flex-row space-x-2 text-sm hover:bg-accent item-center text-muted-foreground"
-              >
-                <span className="w-full">{item}</span>
-                <button type="button" onClick={() => handleRemoveExclude(i)}>
-                  <Edit2 className="w-4 h-4" />
-                </button>
-                <button type="button" onClick={() => handleRemoveExclude(i)}>
-                  <X className="w-5 h-5" />
-                </button>
-              </li>
+                value={item}
+                placeholder="Exclude Pattern"
+                onDelete={() => handleRemoveExclude(i)}
+                onUpdate={(updatedExcludePattern) =>
+                  handleEditExclude(i, String(updatedExcludePattern))
+                }
+              />
             ))}
             {showAddExclude ? (
               <div className="flex flex-row items-center w-full space-x-2 text-sm">
@@ -187,14 +191,14 @@ export default function Settings() {
               <li
                 // eslint-disable-next-line react/no-array-index-key
                 key={item.from + item.to + i}
-                className="flex flex-row space-x-2 text-sm hover:bg-accent item-center text-muted-foreground"
+                className="flex flex-row space-x-2 space-y-1 text-sm hover:bg-accent item-center text-muted-foreground"
               >
                 <span className="w-full">{item.from}</span>
                 <MoveRight />
                 <span className="w-full">{item.to}</span>
-                <button type="button" onClick={() => handleRemoveReplace(i)}>
+                {/* <button type="button">
                   <Edit2 className="w-4 h-4" />
-                </button>
+                </button> */}
                 <button type="button" onClick={() => handleRemoveReplace(i)}>
                   <X className="w-5 h-5" />
                 </button>
