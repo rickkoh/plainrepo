@@ -53,4 +53,4 @@ export type FileContentNode = {
   children?: FileContentNode[]; // Optional: Recursive structure for children
 } & BaseFileNode;
 
-export type FileNodeContents = FileContentNode[];
+export type FileContentNodes = FileContentNode[];

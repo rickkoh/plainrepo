@@ -15,11 +15,7 @@ import log from 'electron-log';
 import { z } from 'zod';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
-import {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  buildFileNode,
-  generateFileTree,
-} from './utils/FileBuilder';
+import { buildFileNode, generateDirectoryStructure } from './utils/FileBuilder';
 import getContent from './utils/ContentAggregator';
 import { FileNodeSchema } from '../types/FileNode';
 import TokenEstimator from './utils/TokenEstimator';
@@ -45,16 +41,11 @@ ipcMain.on('ipc-example', async (event, arg) => {
 
 // TODO: Rename the event to something more meaningful
 ipcMain.on('set-root-dir', async (event, arg) => {
-  // We will just do the brute force method first
   console.log('Setting root dir');
-  // Start measuring time
   const start = Date.now();
-  // Call the function
   const directoryTree = buildFileNode(arg);
-  // End measuring time
   const timeTaken = Date.now() - start;
   console.log('Time taken:', timeTaken);
-  // console.log('returning directoryTree', directoryTree);
   event.reply('root-dir-set', directoryTree);
 });
 
@@ -161,7 +152,7 @@ const createWindow = async () => {
     }
     const fileNode = parsedResult.data;
     let content = '';
-    content += `${generateFileTree(fileNode)}\n`;
+    content += `${generateDirectoryStructure(fileNode)}\n`;
     content += getContent(fileNode);
     return content;
   });
