@@ -20,7 +20,6 @@
     --secondary-foreground: 120 47.4% 11.2%;
     --accent: 42 30% 82%;
     --accent-foreground: 46 63% 11%;
-    --accent-foreground: 222.2 47.4% 11.2%;
     --destructive: 2 72% 59%;
     --destructive-foreground: 210 40% 98%;
     --ring: 7.2 30% 62%;
@@ -69,11 +68,26 @@ body {
   margin: 0px;
 }
 
+/*
 * {
-  -ms-overflow-style: none; /* Internet Explorer 10+ */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 *::-webkit-scrollbar {
-  display: none; /* Safari and Chrome */
+  display: none;
+}
+*/
+
+/*
+ ---break---
+ */
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }
