@@ -14,7 +14,10 @@ export default function getContent(rootFileNode: FileNode) {
         return '';
       }
       const rawContent = fs.readFileSync(fileNode.path, 'utf-8');
-      return `\`\`\`${fileNode.name}\n${applyReplacements(rawContent, replaceList)}\n\`\`\`\n\n`;
+      return applyReplacements(
+        `\`\`\`${fileNode.name}\n${rawContent}\n\`\`\`\n\n`,
+        replaceList,
+      );
     }
     if (fileNode.type === 'directory') {
       let content = '';
