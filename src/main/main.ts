@@ -19,7 +19,7 @@ import {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   buildFileNode,
   generateFileTree,
-} from './utils/DirectoryTree';
+} from './utils/FileBuilder';
 import getContent from './utils/ContentAggregator';
 import { FileNodeSchema } from '../types/FileNode';
 import TokenEstimator from './utils/TokenEstimator';
