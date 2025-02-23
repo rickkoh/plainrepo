@@ -1,14 +1,16 @@
 Version 1.0.0:
   ☐ Menu
     ☐ File (open)
-  ☐ Better copy
-    ☐ Copy directory tree only
-    ☐ Copy content only
-    ☐ Copy everything
   ☐ Change directory in app
     ☐ Optimise performance when changing directory
   ☐ Write test
   ☐ Write release notes
+  ☐ Optimise file node performance
+  ☐ Decide and fix autosync
+  ✔ Better copy @done(25-02-24 01:24)
+    ✔ Copy directory tree only @done(25-02-24 01:24)
+    ✔ Copy content only @done(25-02-24 01:24)
+    ✔ Copy everything @done(25-02-24 01:24)
   ✔ Display tree @started(25-01-18 22:29) @done(25-01-19 00:34) @lasted(2h5m51s)
     ✔ Test tree @done(25-01-19 00:34)
     ✔ Add tree to content @done(25-01-19 00:34)
