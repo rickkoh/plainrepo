@@ -6,7 +6,7 @@ import { buildFileNode } from '../FileBuilder';
 jest.mock('electron', () => ({
   app: {
     getPath: (name: string) => {
-      if (name === 'userData') return '/tmp';
+      if (name === 'userData') return os.tmpdir();
       return '/';
     },
   },
@@ -14,7 +14,7 @@ jest.mock('electron', () => ({
 
 describe('buildFileNode', () => {
   let tempDir: string;
-  const dummySettingsPath = path.join('/tmp', 'AppSettings.json');
+  const dummySettingsPath = path.join(os.tmpdir(), 'AppSettings.json');
 
   beforeAll(() => {
     fs.writeFileSync(
