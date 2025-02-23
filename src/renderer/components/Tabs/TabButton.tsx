@@ -72,7 +72,12 @@ export default function TabButton({
           className="px-1 bg-background w-min focus:outline-muted-foreground"
         />
       ) : (
-        <p onDoubleClick={handleDoubleClick}>{tab.title}</p>
+        <p
+          onDoubleClick={handleDoubleClick}
+          className="whitespace-nowrap overflow-ellipsis"
+        >
+          {tab.title}
+        </p>
       )}
       <button
         type="button"

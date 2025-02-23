@@ -3,10 +3,11 @@ import { FileNode } from '../../types/FileNode';
 import { useTabsManagerContext } from './TabsManagerContext';
 
 interface FileContextProps {
-  content?: string;
   fileNode?: FileNode;
   setFileNode: (fileNode: FileNode) => void;
-  tokenCount?: number;
+  directoryStructure: Promise<string>;
+  content: Promise<string>;
+  tokenCount: Promise<number>;
 }
 
 const FileContext = createContext<FileContextProps | undefined>(undefined);
@@ -22,22 +23,51 @@ export default function FileProvider({
     return activeTab?.fileNode;
   }, [activeTab?.fileNode]);
 
-  const content = useMemo(() => {
-    return activeTab?.content;
-  }, [activeTab?.content]);
+  const directoryStructure = useMemo(async () => {
+    if (!fileNode) {
+      return '';
+    }
+    const toReturn =
+      await window.electron.ipcRenderer.getDirectoryStructure(fileNode);
+    if (!toReturn) {
+      return '';
+    }
+    return toReturn;
+  }, [fileNode]);
 
-  const tokenCount = useMemo(() => {
-    return activeTab?.tokenCount;
-  }, [activeTab?.tokenCount]);
+  const content = useMemo(async () => {
+    if (!fileNode) {
+      return '';
+    }
+    const toReturn = await window.electron.ipcRenderer.getContent(fileNode);
+    if (!toReturn) {
+      return '';
+    }
+    return toReturn;
+  }, [fileNode]);
+
+  const tokenCount = useMemo(async () => {
+    if (!content) {
+      return 0;
+    }
+    const thisContent = await content;
+    const toReturn =
+      await window.electron.ipcRenderer.getTokenCount(thisContent);
+    if (!toReturn) {
+      return 0;
+    }
+    return toReturn;
+  }, [content]);
 
   const providerValue = useMemo(
     () => ({
       fileNode,
       setFileNode,
+      directoryStructure,
       content,
       tokenCount,
     }),
-    [fileNode, setFileNode, content, tokenCount],
+    [content, directoryStructure, fileNode, setFileNode, tokenCount],
   );
 
   return (

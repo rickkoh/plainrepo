@@ -8,7 +8,7 @@
 import { cn } from '@/lib/utils';
 import { useCopyToClipboard, useDebounceCallback } from 'usehooks-ts';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { useWorkspaceContext } from '../contexts/WorkspaceContext';
@@ -16,11 +16,14 @@ import { useFileContext } from '../contexts/FileContext';
 
 export default function Toolbar() {
   const { autoSync, setAutoSync } = useWorkspaceContext();
-  const { fileNode, content, tokenCount } = useFileContext();
+  const { fileNode, directoryStructure, content, tokenCount } =
+    useFileContext();
 
   const [, copy] = useCopyToClipboard();
 
   const [isHovering, setIsHovering] = useState(false);
+
+  const [actualTokenCount, setActualTokenCount] = useState(0);
 
   const delayedHoverOn = useDebounceCallback(() => {
     setIsHovering(true);
@@ -30,6 +33,30 @@ export default function Toolbar() {
     setIsHovering(false);
   }, 420);
 
+  const copyEverything = async () => {
+    const everything = (await Promise.all([directoryStructure, content])).join(
+      '\n',
+    );
+    copy(everything);
+  };
+
+  const copyContent = async () => {
+    copy(await content);
+  };
+
+  const copyDirectoryTree = async () => {
+    copy(await directoryStructure);
+  };
+
+  const getActualTokenCount = useCallback(async () => {
+    const resolvedTokenCount = await tokenCount;
+    setActualTokenCount(resolvedTokenCount);
+  }, [tokenCount]);
+
+  useEffect(() => {
+    getActualTokenCount();
+  }, [getActualTokenCount]);
+
   if (!fileNode) {
     return null;
   }
@@ -38,7 +65,7 @@ export default function Toolbar() {
     <div className="fixed bottom-8 right-8">
       <div className="flex flex-row justify-center gap-4 p-2 rounded-md bg-accent">
         <button type="button" className="px-2 py-1">
-          {tokenCount} Tokens
+          {actualTokenCount} Tokens
         </button>
         <button
           type="button"
@@ -65,14 +92,10 @@ export default function Toolbar() {
             type="button"
             className="flex px-2 py-1"
             onClick={() => {
-              if (content) {
-                copy(content);
-                toast('Copied everything');
-                delayedHoverOn.cancel();
-                setIsHovering(false);
-              } else {
-                toast.error('Nothing to copy');
-              }
+              copyEverything();
+              toast('Copied everything');
+              delayedHoverOn.cancel();
+              setIsHovering(false);
             }}
           >
             Copy
@@ -88,7 +111,7 @@ export default function Toolbar() {
             )}
             style={{ marginBottom: isHovering ? `54px` : `0` }}
             onClick={() => {
-              // TODO: Copy everything
+              copyEverything();
               toast('Copied everything');
               delayedHoverOn.cancel();
               setIsHovering(false);
@@ -107,13 +130,13 @@ export default function Toolbar() {
             )}
             style={{ marginBottom: isHovering ? `100px` : '0px' }}
             onClick={() => {
-              // TODO: Copy contents only
+              copyContent();
               setIsHovering(false);
               toast('Copied contents only');
               delayedHoverOn.cancel();
             }}
           >
-            Copy Contents Only
+            Copy Content
           </Button>
           <Button
             type="button"
@@ -126,7 +149,7 @@ export default function Toolbar() {
             )}
             style={{ marginBottom: isHovering ? `146px` : '0px' }}
             onClick={() => {
-              // TODO: Copy directory tree
+              copyDirectoryTree();
               setIsHovering(false);
               toast('Copied directory tree');
               delayedHoverOn.cancel();

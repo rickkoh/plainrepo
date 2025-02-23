@@ -14,7 +14,7 @@ export default function TabsBar() {
   } = useTabsManagerContext();
 
   return (
-    <div className="flex flex-row w-full">
+    <div className="flex flex-row w-full overflow-x-scroll">
       {tabs.map((tab, index) => (
         <TabButton
           key={tab.id}

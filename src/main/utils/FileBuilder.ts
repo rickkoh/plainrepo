@@ -168,12 +168,46 @@ export function discoverFileNodeContent(node: FileNode): FileNode {
   const appSettings = readAppSettings();
   const replaceList = appSettings.replace || [];
 
+  const syncDate = new Date();
+
   function discover(fileNode: FileNode): FileNode {
     if (fileNode.type === 'file' && fileNode.selected) {
       const rawContent = fs.readFileSync(fileNode.path, 'utf-8');
       return {
         ...fileNode,
         content: applyReplacements(rawContent, replaceList),
+        lastSynced: syncDate,
+      };
+    }
+
+    return {
+      ...fileNode,
+      children: fileNode.children?.map((child) => discover(child)),
+    };
+  }
+
+  return discover(node);
+}
+
+/**
+ * Sync the file node with content
+ *
+ * @param node The file node to sync
+ * @returns The synced file node
+ */
+export function syncFileNode(node: FileNode): FileNode {
+  const appSettings = readAppSettings();
+  const replaceList = appSettings.replace || [];
+
+  const syncDate = new Date();
+
+  function discover(fileNode: FileNode): FileNode {
+    if (fileNode.type === 'file' && fileNode.selected) {
+      const rawContent = fs.readFileSync(fileNode.path, 'utf-8');
+      return {
+        ...fileNode,
+        content: applyReplacements(rawContent, replaceList),
+        lastSynced: syncDate,
       };
     }
 

@@ -15,7 +15,11 @@ import log from 'electron-log';
 import { z } from 'zod';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
-import { buildFileNode, generateDirectoryStructure } from './utils/FileBuilder';
+import {
+  buildFileNode,
+  generateDirectoryStructure,
+  syncFileNode,
+} from './utils/FileBuilder';
 import getContent from './utils/ContentAggregator';
 import { FileNodeSchema } from '../types/FileNode';
 import TokenEstimator from './utils/TokenEstimator';
@@ -141,6 +145,19 @@ const createWindow = async () => {
     return readAppSettings();
   });
 
+  ipcMain.handle('file:get-directory-structure', (event, arg) => {
+    if (!mainWindow) {
+      return null;
+    }
+    console.log('attempting to get-directory-structure');
+    const parsedResult = FileNodeSchema.safeParse(arg);
+    if (!parsedResult.success) {
+      return '';
+    }
+    const fileNode = parsedResult.data;
+    return generateDirectoryStructure(fileNode);
+  });
+
   ipcMain.handle('file:get-content', async (event, arg) => {
     if (!mainWindow) {
       return null;
@@ -151,10 +168,7 @@ const createWindow = async () => {
       return '';
     }
     const fileNode = parsedResult.data;
-    let content = '';
-    content += `${generateDirectoryStructure(fileNode)}\n`;
-    content += getContent(fileNode);
-    return content;
+    return getContent(fileNode);
   });
 
   ipcMain.handle('file:get-token-count', async (event, arg) => {
@@ -164,14 +178,29 @@ const createWindow = async () => {
     console.log('attempting to get-token-count');
     const parsedResult = z.string().safeParse(arg);
     if (!parsedResult.success) {
-      return 'Failed to parse content';
+      return '';
+    }
+    const str = parsedResult.data;
+    const tokenCount = TokenEstimator.estimateTokens(str);
+    return tokenCount;
+  });
+
+  ipcMain.handle('file:sync', async (event, arg) => {
+    if (!mainWindow) {
+      return null;
+    }
+    console.log('attempting to sync-file-node');
+
+    const parsedResult = FileNodeSchema.safeParse(arg);
+    if (!parsedResult.success) {
+      return '';
     }
 
-    const content = parsedResult.data;
+    let fileNode = parsedResult.data;
 
-    const tokenCount = TokenEstimator.estimateTokens(content);
+    fileNode = syncFileNode(fileNode);
 
-    return tokenCount;
+    return fileNode;
   });
 
   ipcMain.handle('workspace:save', async (event, arg1, arg2) => {

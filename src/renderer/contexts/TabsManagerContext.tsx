@@ -90,10 +90,8 @@ export default function TabsManagerProvider({
       return;
     }
 
-    // Build a set of used IDs for O(1) lookups.
     const usedIds = new Set(tabs.map((tab) => Number(tab.id)));
 
-    // Find the smallest missing positive integer.
     let id = 1;
     while (usedIds.has(id)) {
       id += 1;
@@ -103,8 +101,6 @@ export default function TabsManagerProvider({
       id: String(id),
       title: `Tab ${id}`,
       fileNode: JSON.parse(JSON.stringify(fileNode)),
-      content: '',
-      tokenCount: 0,
     };
 
     setTabs([...tabs, newTabData]);
@@ -137,21 +133,23 @@ export default function TabsManagerProvider({
     async (newFileNode: FileNode) => {
       const newTabs = [...tabs];
 
-      let { content, tokenCount } = newTabs[activeTabIndex];
+      let syncedFileNode;
 
       if (autoSync) {
-        content = await window.electron.ipcRenderer.getContent(newFileNode);
-        tokenCount = Number(
-          await window.electron.ipcRenderer.getTokenCount(content),
-        );
+        syncedFileNode =
+          await window.electron.ipcRenderer.syncFileNode(newFileNode);
+
+        newTabs[activeTabIndex] = {
+          ...newTabs[activeTabIndex],
+          fileNode: syncedFileNode,
+        };
+      } else {
+        newTabs[activeTabIndex] = {
+          ...newTabs[activeTabIndex],
+          fileNode: newFileNode,
+        };
       }
 
-      newTabs[activeTabIndex] = {
-        ...newTabs[activeTabIndex],
-        fileNode: newFileNode,
-        content,
-        tokenCount,
-      };
       setTabs(newTabs);
     },
     [activeTabIndex, autoSync, setTabs, tabs],
@@ -161,17 +159,15 @@ export default function TabsManagerProvider({
 
   const refreshTab = useCallback(async () => {
     const newTabs = [...tabs];
-    const content = await window.electron.ipcRenderer.getContent(
+    const syncedFileNode = await window.electron.ipcRenderer.syncFileNode(
       newTabs[activeTabIndex].fileNode,
     );
-    const tokenCount = Number(
-      await window.electron.ipcRenderer.getTokenCount(content),
-    );
+
     newTabs[activeTabIndex] = {
       ...newTabs[activeTabIndex],
-      content,
-      tokenCount,
+      fileNode: syncedFileNode,
     };
+
     setTabs(newTabs);
   }, [activeTabIndex, setTabs, tabs]);
 

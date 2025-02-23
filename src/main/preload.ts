@@ -34,10 +34,14 @@ const electronHandler = {
     },
     readUserData: () => ipcRenderer.invoke('userData:read'),
     selectFolder: () => ipcRenderer.invoke('dialog:openDirectory'),
+    getDirectoryStructure: (fileNode: FileNode): Promise<string> =>
+      ipcRenderer.invoke('file:get-directory-structure', fileNode),
     getContent: (fileNode: FileNode): Promise<string> =>
       ipcRenderer.invoke('file:get-content', fileNode),
-    getTokenCount: (string: string): Promise<string> =>
+    getTokenCount: (string: string): Promise<number> =>
       ipcRenderer.invoke('file:get-token-count', string),
+    syncFileNode: (fileNode: FileNode): Promise<FileNode> =>
+      ipcRenderer.invoke('file:sync', fileNode),
     saveWorkspace: (
       workspacePath: string,
       tabData: TabDataArray,
