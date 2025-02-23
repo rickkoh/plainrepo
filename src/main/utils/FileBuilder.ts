@@ -23,8 +23,6 @@ export function buildFileNode(rootDir: string): FileNode {
 
   const excludeRegexes = buildRegexes(excludePatterns);
 
-  console.log('Excluding patterns:', excludePatterns);
-
   function build(currentPath: string): FileNodes {
     const entries = fs.readdirSync(currentPath, { withFileTypes: true });
 
@@ -115,8 +113,6 @@ export function buildFileNodeContent(rootDir: string): FileNode {
   }
 
   const excludeRegexes = buildRegexes(excludePatterns);
-
-  console.log('Excluding patterns:', excludePatterns);
 
   function readDir(currentPath: string): FileNodes {
     const entries = fs.readdirSync(currentPath, { withFileTypes: true });
