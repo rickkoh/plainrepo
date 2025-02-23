@@ -1,4 +1,14 @@
-Features:
+Version 1.0.0:
+  ☐ Menu
+    ☐ File (open)
+  ☐ Better copy
+    ☐ Copy directory tree only
+    ☐ Copy content only
+    ☐ Copy everything
+  ☐ Change directory in app
+    ☐ Optimise performance when changing directory
+  ☐ Write test
+  ☐ Write release notes
   ✔ Display tree @started(25-01-18 22:29) @done(25-01-19 00:34) @lasted(2h5m51s)
     ✔ Test tree @done(25-01-19 00:34)
     ✔ Add tree to content @done(25-01-19 00:34)
@@ -14,20 +24,12 @@ Features:
     ✔ workspace @started(25-02-03 22:39) @done(25-02-03 22:39) @lasted(19s)
     ✔ Set root path, should it be called root path? (maybe workingDir)
   ✔ Fs handle try catch @done(25-02-15 13:26)
-  ☐ Autosync state, Autosync on, off, syncing
-  ☐ Workspace should watch for file changes (Cannot watch if there are too many files)
-  ☐ Settings page
+  ✔ Settings page @done(25-02-23 12:24)
     ✔ Ignore folders/files @done(25-02-10 01:27)
     ✔ Darkmode @done(25-02-10 01:27)
     ✔ Replace sensitive texts @done(25-02-15 13:27)
     ✔ Insert .gitignore @done(25-02-21 00:46)
-    ☐ Edit list item component
-  ☐ Menu
-    ☐ File (open)
-  ☐ Better copy
-    ☐ Copy directory tree only
-    ☐ Copy content only
-    ☐ Copy everything
+    ✔ Edit list item component @done(25-02-23 12:24)
   ✔ Collapse hide and show only selected files @done(25-02-15 13:25)
   ✔ Save state
   ✔ Tabs feature, open multiple tabs.
@@ -37,6 +39,10 @@ Features:
     ✔ Optimise FileContext to use TabData (content, tokenCount) @done(25-02-20 22:03)
   ✔ Persist workspace
   ✔ Darkmode
+
+Features:
+  ☐ Autosync state, Autosync on, off, syncing
+  ☐ Workspace should watch for file changes (Cannot watch if there are too many files)
   ✔ Search
     ✔ Search for file @done(25-02-15 13:26)
     ☐ Goto file
@@ -45,9 +51,21 @@ Features:
   ☐ Content
     ☐ Indentation
     ☐ Line numbers
+    ☐ Make it a settings item
   ☐ Loading while fs is reading
-
+  ☐ Drag and drop tabs
   ☐ Add 'Consolas' font
+  ☐ Customisable theme
+  ☐ Add img shields to github README (homepage, release, ci status, coverage, license)
+
+Big changes:
+  ☐ Change to use react-window
+  ☐ Change to use redux (kiv)
+
+Optimisations:
+  ☐ Optimise reading of app settings for excluded folders/files
+  ✔ Optimise fs for larger directory @done(25-01-27 00:04)
+  ✔ Optimise search for file @done(25-02-23 12:44)
 
 Landing Page:
   ☐ Release first version of the app
@@ -64,16 +82,14 @@ Landing Page:
 Bugs:
   ✔ If one is selected, parent checkmark should be checked @done(25-02-15 13:26)
   ✔ Search list's selected item doesn't get updated
-  ☐ Exclude list delete edit button doesn't work
-  ☐ ZodError when changing directory
-  ☐ Add tailwind to gitignore, ignore in build
+  ✔ Exclude list delete edit button doesn't work @done(25-02-23 12:25)
+  ✔ Add tailwind to gitignore, ignore in build @done(25-02-23 12:26)
+  ☐ Tabs overflow should not wrap
 
 Performance:
   ✔ Improve initial load time when figuring out root path @started(25-01-28 14:08) @done(25-02-03 22:23) @lasted(6d8h15m20s)
-  ✔ Optimise fs for larger directory @done(25-01-27 00:04)
   ✔ DFS to change selected should have some pruning functions @done(25-01-27 00:04)
   ✔ Form set value to have batch update instead of individual @done(25-01-26 23:48)
   ✔ Improve performance for auto get tokens @done(25-01-26 23:48)
   ☐ Autosync should run concurrently and should update in real-time
   ☐ Able to cancel "opening file" when autoSync is on
-  ☐ Optimise search for file

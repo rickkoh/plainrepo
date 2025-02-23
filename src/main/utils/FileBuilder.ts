@@ -1,13 +1,18 @@
 import { Dirent } from 'node:fs';
-import { FileNode, FileContentNode, FileNodes } from '../../types/FileNode';
+import { FileNode, FileNodes } from '../../types/FileNode';
 import { readAppSettings } from './AppSettings';
 import { applyReplacements } from './Replacer';
 import shouldExclude, { buildRegexes, getGitIgnorePatterns } from './Excluder';
 
-/* eslint-disable no-console */
 const fs = require('fs');
 const path = require('path');
 
+/**
+ * Build the file node from the root directory
+ *
+ * @param rootDir - The root directory to build the file node from
+ * @returns The root file node
+ */
 export function buildFileNode(rootDir: string): FileNode {
   const appSettings = readAppSettings();
   const excludePatterns = appSettings.exclude || [];
@@ -20,7 +25,7 @@ export function buildFileNode(rootDir: string): FileNode {
 
   console.log('Excluding patterns:', excludePatterns);
 
-  function readDir(currentPath: string): FileNodes {
+  function build(currentPath: string): FileNodes {
     const entries = fs.readdirSync(currentPath, { withFileTypes: true });
 
     return entries
@@ -35,7 +40,7 @@ export function buildFileNode(rootDir: string): FileNode {
             name: entry.name,
             path: fullPath,
             type: 'directory',
-            children: readDir(fullPath),
+            children: build(fullPath),
             selected: true,
           };
         }
@@ -53,11 +58,18 @@ export function buildFileNode(rootDir: string): FileNode {
     name: rootDir,
     path: rootDir,
     type: 'directory',
-    children: readDir(rootDir),
+    children: build(rootDir),
     selected: true,
   };
 }
 
+/**
+ * Generate the directory structure from the file node
+ *
+ * @param node The file node to generate the directory structure from
+ * @param indent The indentation to use
+ * @returns The directory structure as a string
+ */
 export function generateDirectoryStructure(
   node: FileNode,
   indent: string = '',
@@ -87,7 +99,13 @@ export function generateDirectoryStructure(
   return result;
 }
 
-export function buildFileNodeContent(rootDir: string): FileContentNode {
+/**
+ * Build the file node with content from the root directory
+ *
+ * @param rootDir The root directory to build the file node from
+ * @returns The root file node with content
+ */
+export function buildFileNodeContent(rootDir: string): FileNode {
   const appSettings = readAppSettings();
   const excludePatterns = appSettings.exclude || [];
   const replaceList = appSettings.replace || [];
@@ -144,11 +162,17 @@ export function buildFileNodeContent(rootDir: string): FileContentNode {
   };
 }
 
-export function toFileNodeContent(node: FileNode): FileContentNode {
+/**
+ * Discover the content from the file node
+ *
+ * @param node The file node to discover the content from
+ * @returns The file node with content
+ */
+export function discoverFileNodeContent(node: FileNode): FileNode {
   const appSettings = readAppSettings();
   const replaceList = appSettings.replace || [];
 
-  function convert(fileNode: FileNode): FileContentNode {
+  function discover(fileNode: FileNode): FileNode {
     if (fileNode.type === 'file' && fileNode.selected) {
       const rawContent = fs.readFileSync(fileNode.path, 'utf-8');
       return {
@@ -159,9 +183,9 @@ export function toFileNodeContent(node: FileNode): FileContentNode {
 
     return {
       ...fileNode,
-      children: fileNode.children?.map((child) => convert(child)),
+      children: fileNode.children?.map((child) => discover(child)),
     };
   }
 
-  return convert(node);
+  return discover(node);
 }
