@@ -219,3 +219,29 @@ export function syncFileNode(node: FileNode): FileNode {
 
   return discover(node);
 }
+
+/**
+ * Flattens a FileNode tree into a flat array of nodes.
+ * Only processes children if the node is a selected directory.
+ *
+ * @param fileNode The file node (root of the tree) to process.
+ * @returns An array containing all nodes from the tree.
+ */
+export function flattenFileNode(fileNode: FileNode): FileNode[] {
+  const result: FileNode[] = [];
+  function flatten(node: FileNode) {
+    if (
+      node.type === 'directory' &&
+      node.children &&
+      node.children.length > 0 &&
+      node.selected
+    ) {
+      node.children.forEach((child) => {
+        flatten(child);
+      });
+    }
+    result.push(node);
+  }
+  flatten(fileNode);
+  return result;
+}

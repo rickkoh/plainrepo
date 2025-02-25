@@ -1,5 +1,10 @@
 import { FileNode } from '@/src/types/FileNode';
 
+export const chunk = (arr: any[], size: number) =>
+  Array.from({ length: Math.ceil(arr.length / size) }, (_: any, i: number) =>
+    arr.slice(i * size, i * size + size),
+  );
+
 export default class TokenEstimator {
   static estimateTokens(
     text: string,
@@ -39,4 +44,36 @@ export default class TokenEstimator {
 
     return Math.floor(output);
   }
+
+  static streamEstimateTokens(
+    fileNodeQueue: FileNode[],
+    callback: (tokens: number) => void,
+    chunkOption?: {
+      size: number;
+    },
+  ): void {
+    chunk(fileNodeQueue, chunkOption?.size ?? 20).forEach((c) => {
+      c.forEach((fileNode) => {
+        if (fileNode.type === 'file' && fileNode.content) {
+          const tokens = TokenEstimator.estimateTokens(fileNode.content);
+          callback(tokens);
+        }
+      });
+    });
+  }
 }
+
+export interface TokenAggregator {
+  process: (tokens: number) => void;
+  getTotal: () => number;
+}
+
+export const createTokenAggregator = (): TokenAggregator => {
+  let count = 0;
+  return {
+    process: (tokens: number) => {
+      count += tokens;
+    },
+    getTotal: () => count,
+  };
+};
