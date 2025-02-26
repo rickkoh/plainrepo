@@ -1,9 +1,5 @@
+import { chunk } from '@/lib/utils';
 import { FileNode } from '@/src/types/FileNode';
-
-export const chunk = (arr: any[], size: number) =>
-  Array.from({ length: Math.ceil(arr.length / size) }, (_: any, i: number) =>
-    arr.slice(i * size, i * size + size),
-  );
 
 export default class TokenEstimator {
   static estimateTokens(

@@ -17,6 +17,7 @@ import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import {
   buildFileNode,
+  flattenFileNode,
   generateDirectoryStructure,
   syncFileNode,
 } from './utils/FileBuilder';
@@ -123,6 +124,50 @@ const createWindow = async () => {
 
   mainWindow.on('closed', () => {
     mainWindow = null;
+  });
+
+  // Convert fileNode to to flat array
+  // Only those that are selected and is a file
+  // Process them in chunks
+  // For each chunk, process the fileNode and send an update to the renderer
+  // The renderer will receive the update and update the ui
+  // The update needs to be known how to be read by the renderer
+  // The main process will send the update to the renderer
+  // The renderer will be responsible for triggering the update, and updating the ui
+
+  // Convert tokenEstimator to use streams
+  // Update will just be increase, decrease, operations
+
+  // Convert content to use streams
+
+  ipcMain.handle('token:estimate', async (event, arg) => {
+    if (!mainWindow) {
+      return null;
+    }
+    const parsedResult = FileNodeSchema.safeParse(arg);
+
+    if (!parsedResult.success) {
+      return '';
+    }
+
+    const fileNode = parsedResult.data;
+    const flattenedFileNodes = flattenFileNode(fileNode);
+
+    let count = 0;
+
+    TokenEstimator.streamEstimateTokens(
+      flattenedFileNodes,
+      (tokens: number) => {
+        count += tokens;
+        if (!mainWindow) {
+          return;
+        }
+        mainWindow.webContents.send('stream:token:estimate', count);
+      },
+      { size: 100 },
+    );
+
+    return null;
   });
 
   ipcMain.handle('dialog:openDirectory', async () => {

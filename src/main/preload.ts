@@ -10,7 +10,9 @@ export type Channels =
   | 'root-dir-set'
   | 'get-content'
   | 'get-token-count'
-  | 'set-app-settings';
+  | 'set-app-settings'
+  | 'stream:token:estimate'
+  | 'content:stream';
 
 const electronHandler = {
   ipcRenderer: {
@@ -53,6 +55,8 @@ const electronHandler = {
       settings: unknown,
     ): Promise<{ success: boolean; error?: string }> =>
       ipcRenderer.invoke('appSettings:update', settings),
+    estimateToken: (fileNode: FileNode) =>
+      ipcRenderer.invoke('token:estimate', fileNode),
   },
 };
 

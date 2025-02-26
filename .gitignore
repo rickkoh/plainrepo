@@ -29,3 +29,5 @@ npm-debug.log.*
 *.scss.d.ts
 
 **/Tailwind.css
+
+random_tree_root/

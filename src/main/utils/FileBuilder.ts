@@ -7,6 +7,8 @@ import shouldExclude, { buildRegexes, getGitIgnorePatterns } from './Excluder';
 const fs = require('fs');
 const path = require('path');
 
+const MAX_SIZE = 4_000_000; // 1 MB for example
+
 /**
  * Build the file node from the root directory
  *
@@ -39,7 +41,7 @@ export function buildFileNode(rootDir: string): FileNode {
             path: fullPath,
             type: 'directory',
             children: build(fullPath),
-            selected: true,
+            selected: false,
           };
         }
 
@@ -47,7 +49,7 @@ export function buildFileNode(rootDir: string): FileNode {
           name: entry.name,
           path: fullPath,
           type: 'file',
-          selected: true,
+          selected: false,
         };
       });
   }
@@ -57,7 +59,7 @@ export function buildFileNode(rootDir: string): FileNode {
     path: rootDir,
     type: 'directory',
     children: build(rootDir),
-    selected: true,
+    selected: false,
   };
 }
 
@@ -194,6 +196,7 @@ export function discoverFileNodeContent(node: FileNode): FileNode {
  *
  * @param node The file node to sync
  * @returns The synced file node
+ * @complexity O(n)
  */
 export function syncFileNode(node: FileNode): FileNode {
   const appSettings = readAppSettings();
@@ -203,12 +206,28 @@ export function syncFileNode(node: FileNode): FileNode {
 
   function discover(fileNode: FileNode): FileNode {
     if (fileNode.type === 'file' && fileNode.selected) {
-      const rawContent = fs.readFileSync(fileNode.path, 'utf-8');
-      return {
-        ...fileNode,
-        content: applyReplacements(rawContent, replaceList),
-        lastSynced: syncDate,
-      };
+      // In getContent or readContent
+      const stats = fs.statSync(fileNode.path);
+
+      if (stats.size > MAX_SIZE) {
+        return {
+          ...fileNode,
+          lastSynced: syncDate,
+        };
+      }
+      try {
+        const rawContent = fs.readFileSync(fileNode.path, 'utf-8');
+        return {
+          ...fileNode,
+          content: applyReplacements(rawContent, replaceList),
+          lastSynced: syncDate,
+        };
+      } catch (error) {
+        return {
+          ...fileNode,
+          lastSynced: syncDate,
+        };
+      }
     }
 
     return {
@@ -226,6 +245,7 @@ export function syncFileNode(node: FileNode): FileNode {
  *
  * @param fileNode The file node (root of the tree) to process.
  * @returns An array containing all nodes from the tree.
+ * @complexity O(n)
  */
 export function flattenFileNode(fileNode: FileNode): FileNode[] {
   const result: FileNode[] = [];
@@ -239,8 +259,9 @@ export function flattenFileNode(fileNode: FileNode): FileNode[] {
       node.children.forEach((child) => {
         flatten(child);
       });
+    } else if (node.type === 'file' && node.selected) {
+      result.push(node);
     }
-    result.push(node);
   }
   flatten(fileNode);
   return result;

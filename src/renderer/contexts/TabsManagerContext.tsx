@@ -5,7 +5,6 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from 'react';
 import { FileNode } from '@/src/types/FileNode';
@@ -40,7 +39,7 @@ interface TabsManagerProviderProps {}
 export default function TabsManagerProvider({
   children,
 }: PropsWithChildren<TabsManagerProviderProps>) {
-  const { fileNode, autoSync, workingDir } = useWorkspaceContext();
+  const { fileNode, workingDir } = useWorkspaceContext();
 
   const [tabs, _setTabs] = useState<TabDataArray>([]);
 
@@ -133,50 +132,18 @@ export default function TabsManagerProvider({
     async (newFileNode: FileNode) => {
       const newTabs = [...tabs];
 
-      let syncedFileNode;
+      const syncedFileNode =
+        await window.electron.ipcRenderer.syncFileNode(newFileNode);
 
-      if (autoSync) {
-        syncedFileNode =
-          await window.electron.ipcRenderer.syncFileNode(newFileNode);
-
-        newTabs[activeTabIndex] = {
-          ...newTabs[activeTabIndex],
-          fileNode: syncedFileNode,
-        };
-      } else {
-        newTabs[activeTabIndex] = {
-          ...newTabs[activeTabIndex],
-          fileNode: newFileNode,
-        };
-      }
+      newTabs[activeTabIndex] = {
+        ...newTabs[activeTabIndex],
+        fileNode: syncedFileNode,
+      };
 
       setTabs(newTabs);
     },
-    [activeTabIndex, autoSync, setTabs, tabs],
+    [activeTabIndex, setTabs, tabs],
   );
-
-  const prevAutoSyncRef = useRef(false);
-
-  const refreshTab = useCallback(async () => {
-    const newTabs = [...tabs];
-    const syncedFileNode = await window.electron.ipcRenderer.syncFileNode(
-      newTabs[activeTabIndex].fileNode,
-    );
-
-    newTabs[activeTabIndex] = {
-      ...newTabs[activeTabIndex],
-      fileNode: syncedFileNode,
-    };
-
-    setTabs(newTabs);
-  }, [activeTabIndex, setTabs, tabs]);
-
-  useEffect(() => {
-    if (autoSync && !prevAutoSyncRef.current) {
-      refreshTab();
-    }
-    prevAutoSyncRef.current = !!autoSync;
-  }, [autoSync, refreshTab]);
 
   const providerValue = useMemo(
     () => ({
@@ -228,7 +195,7 @@ export default function TabsManagerProvider({
           return null;
         });
     }
-  }, [autoSync, fileNode, workingDir]);
+  }, [fileNode, workingDir]);
 
   return (
     <TabsManagerContext.Provider value={providerValue}>

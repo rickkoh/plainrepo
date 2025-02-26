@@ -13,8 +13,6 @@ interface WorkspaceContextProps {
   setWorkingDir: (path: string) => void;
   workingDirName?: string;
   fileNode?: FileNode;
-  autoSync?: boolean;
-  setAutoSync: (autoSync: boolean) => void;
   filterName?: string;
   setFilterName: (filterName: string) => void;
 }
@@ -32,8 +30,6 @@ export default function WorkspaceProvider({
 
   const [originalFileNode, setOriginalFileNode] = useState<FileNode>();
 
-  const [autoSync, _setAutoSync] = useState<boolean>();
-
   const [filterName, setFilterName] = useState<string>();
 
   const workingDirName = useMemo(() => {
@@ -45,22 +41,16 @@ export default function WorkspaceProvider({
     _setWorkingDir(path);
   };
 
-  const setAutoSync = (newAutoSync: boolean) => {
-    _setAutoSync(newAutoSync);
-  };
-
   const providerValue = useMemo(
     () => ({
       workingDir,
       setWorkingDir,
       workingDirName,
       fileNode: originalFileNode,
-      autoSync,
-      setAutoSync,
       filterName,
       setFilterName,
     }),
-    [workingDir, workingDirName, originalFileNode, autoSync, filterName],
+    [workingDir, workingDirName, originalFileNode, filterName],
   );
 
   const handleRootDirSet = (arg: unknown) => {

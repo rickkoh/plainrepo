@@ -11,11 +11,9 @@ import { Button } from '@/components/ui/button';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-import { useWorkspaceContext } from '../contexts/WorkspaceContext';
 import { useFileContext } from '../contexts/FileContext';
 
 export default function Toolbar() {
-  const { autoSync, setAutoSync } = useWorkspaceContext();
   const { fileNode, directoryStructure, content, tokenCount } =
     useFileContext();
 
@@ -66,15 +64,6 @@ export default function Toolbar() {
       <div className="flex flex-row justify-center gap-4 p-2 rounded-md bg-accent">
         <button type="button" className="px-2 py-1">
           {actualTokenCount} Tokens
-        </button>
-        <button
-          type="button"
-          className={cn('px-2 py-1')}
-          onClick={() => {
-            setAutoSync(!autoSync);
-          }}
-        >
-          Autosync {autoSync ? 'on' : 'off'}
         </button>
         <div
           className="relative"

@@ -59,6 +59,8 @@ Features:
   ☐ Add 'Consolas' font
   ☐ Customisable theme
   ☐ Add img shields to github README (homepage, release, ci status, coverage, license)
+  ☐ Different kinds of chunk options
+    ☐ By file size, by line count, by token count etc
 
 Big changes:
   ☐ Change to use react-window
