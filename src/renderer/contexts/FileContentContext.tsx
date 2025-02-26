@@ -19,6 +19,7 @@ import {
  * fileContent will be the state that will be used to for other components to render the content of the files
  * Total time complexity: O(n + n + n + n + nlogn) or O(n + n + n + n) or O(n + n + n + n) or O(n + n + n + 1) which is O(nlogn)
  * REndering will be handled using virtualization
+ * TODO NEXT: Make it a single tabbed application
  */
 
 // Define the state interface
