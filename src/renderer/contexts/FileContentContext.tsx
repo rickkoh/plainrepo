@@ -29,7 +29,7 @@ interface State {
 
 // Define action types
 type Action =
-  | { type: 'ADD_FILE_CONTENT'; payload: FileContent | FileContent[] }
+  | { type: 'ADD_FILE_CONTENT'; payload: FileContent[] }
   | { type: 'REMOVE_FILE_CONTENT'; payload: string[] }
   | {
       type: 'SET_FILE_CONTENT';
@@ -53,22 +53,18 @@ const sortFilesByPath = (files: FileContent[]): FileContent[] => {
 // Helper function to add files efficiently using a Map for O(1) lookup
 const addFilesToState = (
   currentFiles: FileContent[],
-  newFiles: FileContent | FileContent[],
+  newFiles: FileContent[],
 ): FileContent[] => {
   const filesMap = new Map<string, FileContent>();
 
   // Add existing files to map
-  currentFiles.forEach((file) => {
-    filesMap.set(file.path, file);
-  });
+  for (let i = 0; i < currentFiles.length; i += 1) {
+    filesMap.set(currentFiles[i].path, currentFiles[i]);
+  }
 
   // Add or update with new files
-  if (Array.isArray(newFiles)) {
-    newFiles.forEach((file) => {
-      filesMap.set(file.path, file);
-    });
-  } else {
-    filesMap.set(newFiles.path, newFiles);
+  for (let i = 0; i < newFiles.length; i += 1) {
+    filesMap.set(newFiles[i].path, newFiles[i]);
   }
 
   // Convert map back to array and sort
@@ -79,13 +75,11 @@ function reducer(state: State, action: Action): State {
   switch (action.type) {
     case 'ADD_FILE_CONTENT': // O(n log n) due to sorting
       return {
-        ...state,
         fileContents: addFilesToState(state.fileContents, action.payload),
       };
 
     case 'REMOVE_FILE_CONTENT': // O(n) to filter + create new array
       return {
-        ...state,
         fileContents: state.fileContents.filter(
           (file) => !action.payload.includes(file.path),
         ),
@@ -93,7 +87,6 @@ function reducer(state: State, action: Action): State {
 
     case 'SET_FILE_CONTENT': // O(n log n) due to sorting
       return {
-        ...state,
         fileContents: sortFilesByPath(action.payload),
       };
 
@@ -116,15 +109,15 @@ export default function FileContentProvider({
 
   // Set up the electron IPC listener
   useEffect(() => {
-    const handler = (payload: unknown) => {
+    const handler = (action: unknown) => {
       // @ts-ignore
-      dispatch({ type: 'ADD_FILE_CONTENT', payload });
+      dispatch(action);
     };
 
-    window.electron.ipcRenderer.on('content:stream', handler);
+    window.electron.ipcRenderer.on('stream:content', handler);
 
     return () => {
-      window.electron.ipcRenderer.off('content:stream', handler);
+      window.electron.ipcRenderer.off('stream:content', handler);
     };
   }, []);
 

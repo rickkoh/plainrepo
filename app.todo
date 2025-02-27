@@ -1,4 +1,4 @@
-Version 1.0.0:
+Version 1.0.0-alpha (Unreleased):
   ☐ Menu
     ☐ File (open)
   ☐ Change directory in app
@@ -42,8 +42,24 @@ Version 1.0.0:
   ✔ Persist workspace
   ✔ Darkmode
 
+Version 1.0.0-rc:
+  ✔ Perpetual sycn @done(25-02-28 02:24)
+  ☐ Total number of file
+  ☐ File/Content size
+  ☐ Token count
+  ☐ Copy limit
+  ☐ Menu
+    ☐ File (open)
+  ☐ Change directory in app
+    ☐ Optimise performance when changing directory
+  ☐ Write test
+  ☐ Write release notes
+  ☐ Optimise file node performance
+  ☐ Decide and fix autosync
+  ☐ Tabs feature
+
 Features:
-  ☐ Autosync state, Autosync on, off, syncing
+  ✘ Autosync state, Autosync on, off, syncing @cancelled(25-02-28 02:22)
   ☐ Workspace should watch for file changes (Cannot watch if there are too many files)
   ✔ Search
     ✔ Search for file @done(25-02-15 13:26)

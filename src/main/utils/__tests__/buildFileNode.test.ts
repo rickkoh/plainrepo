@@ -44,7 +44,7 @@ describe('buildFileNode', () => {
     const fileNode = buildFileNode(tempDir);
 
     expect(fileNode.type).toBe('directory');
-    expect(fileNode.selected).toBe(true);
+    expect(fileNode.selected).toBe(false);
 
     expect(fileNode.children).toBeDefined();
     expect(fileNode.children?.length).toBe(2);

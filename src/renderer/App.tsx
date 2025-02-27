@@ -12,17 +12,17 @@ import Toolbar from './components/Toolbar';
 import Sidebar from './components/Sidebar';
 import AppProvider from './contexts/AppContext';
 import WorkspaceProvider from './contexts/WorkspaceContext';
-import TabsManagerProvider from './contexts/TabsManagerContext';
-import TabsPanel from './components/Tabs/TabsPanel';
 import FileProvider from './contexts/FileContext';
+import FileContent from './components/FileContent';
+import FileContentProvider from './contexts/FileContentContext';
 
 function Hello() {
   return (
     <main className="relative w-full h-screen overflow-hidden">
       <AppProvider>
         <WorkspaceProvider>
-          <TabsManagerProvider>
-            <FileProvider>
+          <FileProvider>
+            <FileContentProvider>
               <div className="flex flex-row w-full h-full">
                 <ResizablePanelGroup direction="horizontal">
                   <ResizablePanel defaultSize={30} minSize={20} maxSize={80}>
@@ -30,14 +30,14 @@ function Hello() {
                   </ResizablePanel>
                   <ResizableHandle />
                   <ResizablePanel>
-                    <TabsPanel />
+                    {/* <TabsPanel /> */}
+                    <FileContent />
                     <Toolbar />
                   </ResizablePanel>
                 </ResizablePanelGroup>
               </div>
-            </FileProvider>
-            ;
-          </TabsManagerProvider>
+            </FileContentProvider>
+          </FileProvider>
         </WorkspaceProvider>
       </AppProvider>
       <Toaster position="top-right" />

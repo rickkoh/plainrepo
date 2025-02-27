@@ -21,12 +21,13 @@ import {
   generateDirectoryStructure,
   syncFileNode,
 } from './utils/FileBuilder';
-import getContent from './utils/ContentAggregator';
+import { streamGetContent } from './utils/ContentAggregator';
 import { FileNodeSchema } from '../types/FileNode';
 import TokenEstimator from './utils/TokenEstimator';
 import { readAppSettings, writeAppSettings } from './utils/AppSettings';
 import { loadWorkspace, saveWorkspace } from './utils/AppData';
 import { TabDataArraySchema } from '../types/TabData';
+import { FileContent } from '../types/FileContent';
 
 class AppUpdater {
   constructor() {
@@ -140,6 +141,47 @@ const createWindow = async () => {
 
   // Convert content to use streams
 
+  ipcMain.handle('stream:content', async (event, arg) => {
+    if (!mainWindow) {
+      return null;
+    }
+    console.log('reached 1');
+    const parsedResult = FileNodeSchema.safeParse(arg);
+
+    console.log('reached 2');
+    if (!parsedResult.success) {
+      return null;
+    }
+    console.log('reached 3');
+
+    const fileNode = parsedResult.data;
+
+    const flattenedFileNodes = flattenFileNode(fileNode);
+    console.log('reached 4');
+
+    mainWindow.webContents.send('stream:content', {
+      type: 'CLEAR_FILE_CONTENT',
+    });
+    console.log('reached 5');
+
+    streamGetContent(
+      flattenedFileNodes,
+      (fileContents: FileContent[]) => {
+        if (!mainWindow) {
+          return;
+        }
+        mainWindow.webContents.send('stream:content', {
+          type: 'ADD_FILE_CONTENT',
+          payload: fileContents,
+        });
+      },
+      { size: 100 },
+    );
+
+    console.log('reached 6');
+    return null;
+  });
+
   ipcMain.handle('token:estimate', async (event, arg) => {
     if (!mainWindow) {
       return null;
@@ -201,19 +243,6 @@ const createWindow = async () => {
     }
     const fileNode = parsedResult.data;
     return generateDirectoryStructure(fileNode);
-  });
-
-  ipcMain.handle('file:get-content', async (event, arg) => {
-    if (!mainWindow) {
-      return null;
-    }
-    console.log('attempting to get-content');
-    const parsedResult = FileNodeSchema.safeParse(arg);
-    if (!parsedResult.success) {
-      return '';
-    }
-    const fileNode = parsedResult.data;
-    return getContent(fileNode);
   });
 
   ipcMain.handle('file:get-token-count', async (event, arg) => {

@@ -11,7 +11,8 @@ export type Channels =
   | 'get-content'
   | 'get-token-count'
   | 'set-app-settings'
-  | 'stream:token:estimate'
+  | 'stream:token-count'
+  | 'stream:content'
   | 'content:stream';
 
 const electronHandler = {
@@ -38,8 +39,6 @@ const electronHandler = {
     selectFolder: () => ipcRenderer.invoke('dialog:openDirectory'),
     getDirectoryStructure: (fileNode: FileNode): Promise<string> =>
       ipcRenderer.invoke('file:get-directory-structure', fileNode),
-    getContent: (fileNode: FileNode): Promise<string> =>
-      ipcRenderer.invoke('file:get-content', fileNode),
     getTokenCount: (string: string): Promise<number> =>
       ipcRenderer.invoke('file:get-token-count', string),
     syncFileNode: (fileNode: FileNode): Promise<FileNode> =>
@@ -57,6 +56,8 @@ const electronHandler = {
       ipcRenderer.invoke('appSettings:update', settings),
     estimateToken: (fileNode: FileNode) =>
       ipcRenderer.invoke('token:estimate', fileNode),
+    streamContent: (fileNode: FileNode) =>
+      ipcRenderer.invoke('stream:content', fileNode),
   },
 };
 

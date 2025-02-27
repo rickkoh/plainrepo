@@ -8,20 +8,19 @@
 import { cn } from '@/lib/utils';
 import { useCopyToClipboard, useDebounceCallback } from 'usehooks-ts';
 import { Button } from '@/components/ui/button';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { useFileContext } from '../contexts/FileContext';
 
 export default function Toolbar() {
-  const { fileNode, directoryStructure, content, tokenCount } =
-    useFileContext();
+  const { fileNode } = useFileContext();
 
   const [, copy] = useCopyToClipboard();
 
   const [isHovering, setIsHovering] = useState(false);
 
-  const [actualTokenCount, setActualTokenCount] = useState(0);
+  const [tokenCount, setTokenCount] = useState(0);
 
   const delayedHoverOn = useDebounceCallback(() => {
     setIsHovering(true);
@@ -32,28 +31,26 @@ export default function Toolbar() {
   }, 420);
 
   const copyEverything = async () => {
-    const everything = (await Promise.all([directoryStructure, content])).join(
-      '\n',
-    );
-    copy(everything);
+    copy('');
   };
 
   const copyContent = async () => {
-    copy(await content);
+    copy('');
   };
 
   const copyDirectoryTree = async () => {
-    copy(await directoryStructure);
+    copy('');
   };
 
-  const getActualTokenCount = useCallback(async () => {
-    const resolvedTokenCount = await tokenCount;
-    setActualTokenCount(resolvedTokenCount);
-  }, [tokenCount]);
-
   useEffect(() => {
-    getActualTokenCount();
-  }, [getActualTokenCount]);
+    // @ts-ignore
+    window.electron.ipcRenderer.on('stream:token-count', setTokenCount);
+
+    return () => {
+      // @ts-ignore
+      window.electron.ipcRenderer.off('stream:token-count', setTokenCount);
+    };
+  }, []);
 
   if (!fileNode) {
     return null;
@@ -63,7 +60,7 @@ export default function Toolbar() {
     <div className="fixed bottom-8 right-8">
       <div className="flex flex-row justify-center gap-4 p-2 rounded-md bg-accent">
         <button type="button" className="px-2 py-1">
-          {actualTokenCount} Tokens
+          {tokenCount} Tokens
         </button>
         <div
           className="relative"
