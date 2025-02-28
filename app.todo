@@ -44,14 +44,15 @@ Version 1.0.0-alpha (Unreleased):
 
 Version 1.0.0-rc:
   ✔ Perpetual sycn @done(25-02-28 02:24)
-  ☐ Total number of file
-  ☐ File/Content size
-  ☐ Token count
-  ☐ Copy limit
+  ☐ Clean up preload/remove old functions
   ☐ Menu
     ☐ File (open)
   ☐ Change directory in app
     ☐ Optimise performance when changing directory
+  ☐ Total number of file
+  ☐ File/Content size
+  ☐ Token count
+  ☐ Copy limit
   ☐ Write test
   ☐ Write release notes
   ☐ Optimise file node performance
