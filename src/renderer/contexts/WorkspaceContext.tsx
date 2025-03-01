@@ -7,10 +7,10 @@ import {
   useMemo,
   useState,
 } from 'react';
+import { z } from 'zod';
 
 interface WorkspaceContextProps {
   workingDir?: string;
-  setWorkingDir: (path: string) => void;
   workingDirName?: string;
   fileNode?: FileNode;
   filterName?: string;
@@ -26,7 +26,7 @@ interface WorkspaceProviderProps {}
 export default function WorkspaceProvider({
   children,
 }: PropsWithChildren<WorkspaceProviderProps>) {
-  const [workingDir, _setWorkingDir] = useState<string>();
+  const [workingDir, setWorkingDir] = useState<string>();
 
   const [originalFileNode, setOriginalFileNode] = useState<FileNode>();
 
@@ -36,15 +36,9 @@ export default function WorkspaceProvider({
     return workingDir ? workingDir.split('/').pop() : '';
   }, [workingDir]);
 
-  const setWorkingDir = (path: string) => {
-    window.electron.ipcRenderer.sendMessage('set-root-dir', path);
-    _setWorkingDir(path);
-  };
-
   const providerValue = useMemo(
     () => ({
       workingDir,
-      setWorkingDir,
       workingDirName,
       fileNode: originalFileNode,
       filterName,
@@ -63,13 +57,22 @@ export default function WorkspaceProvider({
     }
   };
 
+  const handlePathSet = (arg: unknown) => {
+    const safeArg = z.string().safeParse(arg);
+    if (!safeArg.success) {
+      return;
+    }
+    setWorkingDir(safeArg.data);
+  };
+
   useEffect(() => {
-    window.electron.ipcRenderer.on('root-dir-set', handleRootDirSet);
+    window.electron.ipcRenderer.on('workspace:path', handlePathSet);
+    window.electron.ipcRenderer.on('workspace:fileNode', handleRootDirSet);
 
     return () => {
-      window.electron.ipcRenderer.off('root-dir-set', handleRootDirSet);
+      window.electron.ipcRenderer.off('workspace:path', handlePathSet);
+      window.electron.ipcRenderer.off('workspace:fileNode', handleRootDirSet);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

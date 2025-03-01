@@ -105,7 +105,7 @@ export default function AppProvider({
   // Load initial settings on mount.
   useEffect(() => {
     window.electron.ipcRenderer
-      .readUserData()
+      .readAppSettings()
       .then((userData: unknown) => {
         const settings = AppSettingsSchema.parse(userData);
         setAppSettings(settings);

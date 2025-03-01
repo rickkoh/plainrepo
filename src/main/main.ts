@@ -12,21 +12,16 @@ import path from 'path';
 import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
-import { z } from 'zod';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import {
   buildFileNode,
   flattenFileNode,
   generateDirectoryStructure,
-  syncFileNode,
 } from './utils/FileBuilder';
 import { streamGetContent } from './utils/ContentAggregator';
 import { FileNodeSchema } from '../types/FileNode';
-import TokenEstimator from './utils/TokenEstimator';
 import { readAppSettings, writeAppSettings } from './utils/AppSettings';
-import { loadWorkspace, saveWorkspace } from './utils/AppData';
-import { TabDataArraySchema } from '../types/TabData';
 import { FileContent } from '../types/FileContent';
 
 class AppUpdater {
@@ -45,19 +40,24 @@ ipcMain.on('ipc-example', async (event, arg) => {
   event.reply('ipc-example', msgTemplate('pong'));
 });
 
-// TODO: Rename the event to something more meaningful
-ipcMain.on('set-root-dir', async (event, arg) => {
-  console.log('Setting root dir');
-  const start = Date.now();
-  const directoryTree = buildFileNode(arg);
-  const timeTaken = Date.now() - start;
-  console.log('Time taken:', timeTaken);
-  event.reply('root-dir-set', directoryTree);
-});
+ipcMain.on('dialog:openDirectory', async () => {
+  if (!mainWindow) {
+    return null;
+  }
+  const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openDirectory'],
+  });
+  if (!canceled) {
+    mainWindow.webContents.send('workspace:path', filePaths[0]);
 
-ipcMain.on('set-app-settings', async (event, arg) => {
-  console.log('attempting to write-user-data', arg);
-  writeAppSettings(arg);
+    const start = Date.now();
+    const directoryTree = buildFileNode(filePaths[0]);
+    const timeTaken = Date.now() - start;
+
+    console.log('Time taken:', timeTaken);
+    mainWindow.webContents.send('workspace:fileNode', directoryTree);
+  }
+  return null;
 });
 
 if (process.env.NODE_ENV === 'production') {
@@ -127,42 +127,23 @@ const createWindow = async () => {
     mainWindow = null;
   });
 
-  // Convert fileNode to to flat array
-  // Only those that are selected and is a file
-  // Process them in chunks
-  // For each chunk, process the fileNode and send an update to the renderer
-  // The renderer will receive the update and update the ui
-  // The update needs to be known how to be read by the renderer
-  // The main process will send the update to the renderer
-  // The renderer will be responsible for triggering the update, and updating the ui
-
-  // Convert tokenEstimator to use streams
-  // Update will just be increase, decrease, operations
-
-  // Convert content to use streams
-
   ipcMain.handle('stream:content', async (event, arg) => {
     if (!mainWindow) {
       return null;
     }
-    console.log('reached 1');
     const parsedResult = FileNodeSchema.safeParse(arg);
 
-    console.log('reached 2');
     if (!parsedResult.success) {
       return null;
     }
-    console.log('reached 3');
 
     const fileNode = parsedResult.data;
 
     const flattenedFileNodes = flattenFileNode(fileNode);
-    console.log('reached 4');
 
     mainWindow.webContents.send('stream:content', {
       type: 'CLEAR_FILE_CONTENT',
     });
-    console.log('reached 5');
 
     streamGetContent(
       flattenedFileNodes,
@@ -182,122 +163,11 @@ const createWindow = async () => {
     return null;
   });
 
-  ipcMain.handle('token:estimate', async (event, arg) => {
-    if (!mainWindow) {
-      return null;
-    }
-    const parsedResult = FileNodeSchema.safeParse(arg);
-
-    if (!parsedResult.success) {
-      return '';
-    }
-
-    const fileNode = parsedResult.data;
-    const flattenedFileNodes = flattenFileNode(fileNode);
-
-    let count = 0;
-
-    TokenEstimator.streamEstimateTokens(
-      flattenedFileNodes,
-      (tokens: number) => {
-        count += tokens;
-        if (!mainWindow) {
-          return;
-        }
-        mainWindow.webContents.send('stream:token:estimate', count);
-      },
-      { size: 100 },
-    );
-
-    return null;
-  });
-
-  ipcMain.handle('dialog:openDirectory', async () => {
-    if (!mainWindow) {
-      return null;
-    }
-    const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
-      properties: ['openDirectory'],
-    });
-    if (!canceled) {
-      return filePaths[0];
-    }
-    return null;
-  });
-
-  ipcMain.handle('userData:read', async () => {
+  ipcMain.handle('appSettings:read', async () => {
     if (!mainWindow) {
       return null;
     }
     return readAppSettings();
-  });
-
-  ipcMain.handle('file:get-directory-structure', (event, arg) => {
-    if (!mainWindow) {
-      return null;
-    }
-    console.log('attempting to get-directory-structure');
-    const parsedResult = FileNodeSchema.safeParse(arg);
-    if (!parsedResult.success) {
-      return '';
-    }
-    const fileNode = parsedResult.data;
-    return generateDirectoryStructure(fileNode);
-  });
-
-  ipcMain.handle('file:get-token-count', async (event, arg) => {
-    if (!mainWindow) {
-      return null;
-    }
-    console.log('attempting to get-token-count');
-    const parsedResult = z.string().safeParse(arg);
-    if (!parsedResult.success) {
-      return '';
-    }
-    const str = parsedResult.data;
-    const tokenCount = TokenEstimator.estimateTokens(str);
-    return tokenCount;
-  });
-
-  ipcMain.handle('file:sync', async (event, arg) => {
-    if (!mainWindow) {
-      return null;
-    }
-    console.log('attempting to sync-file-node');
-
-    const parsedResult = FileNodeSchema.safeParse(arg);
-    if (!parsedResult.success) {
-      return '';
-    }
-
-    let fileNode = parsedResult.data;
-
-    fileNode = syncFileNode(fileNode);
-
-    return fileNode;
-  });
-
-  ipcMain.handle('workspace:save', async (event, arg1, arg2) => {
-    if (!mainWindow) {
-      return null;
-    }
-    console.log('attempting to save workspace');
-    const parsedArg1 = z.string().parse(arg1);
-    const parsedArg2 = TabDataArraySchema.parse(arg2);
-
-    saveWorkspace(parsedArg1, parsedArg2);
-
-    return null;
-  });
-
-  ipcMain.handle('workspace:load', async (event, arg) => {
-    if (!mainWindow) {
-      return null;
-    }
-    console.log('attempting to load workspace');
-    const parsedArg = z.string().parse(arg);
-    const tabData = loadWorkspace(parsedArg);
-    return tabData;
   });
 
   ipcMain.handle('appSettings:update', async (event, settings) => {
@@ -311,6 +181,19 @@ const createWindow = async () => {
       console.error('Failed to update app settings:', error);
       return { success: false, error: error.message };
     }
+  });
+
+  ipcMain.handle('file:get-directory-structure', (event, arg) => {
+    if (!mainWindow) {
+      return null;
+    }
+    console.log('attempting to get-directory-structure');
+    const parsedResult = FileNodeSchema.safeParse(arg);
+    if (!parsedResult.success) {
+      return '';
+    }
+    const fileNode = parsedResult.data;
+    return generateDirectoryStructure(fileNode);
   });
 
   const menuBuilder = new MenuBuilder(mainWindow);

@@ -4,6 +4,7 @@ import {
   shell,
   BrowserWindow,
   MenuItemConstructorOptions,
+  ipcMain,
 } from 'electron';
 
 interface DarwinMenuItemConstructorOptions extends MenuItemConstructorOptions {
@@ -90,7 +91,9 @@ export default class MenuBuilder {
         {
           label: 'Open',
           accelerator: 'Command+P',
-          selector: 'dialog:openDirectory',
+          click: () => {
+            ipcMain.emit('dialog:openDirectory');
+          },
         },
       ],
     };

@@ -2,15 +2,12 @@
 /* eslint no-unused-vars: off */
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
 import { FileNode } from '../types/FileNode';
-import { TabDataArray } from '../types/TabData';
 
 export type Channels =
   | 'ipc-example'
-  | 'set-root-dir'
-  | 'root-dir-set'
-  | 'get-content'
-  | 'get-token-count'
-  | 'set-app-settings'
+  | 'dialog:openDirectory'
+  | 'workspace:path'
+  | 'workspace:fileNode'
   | 'stream:token-count'
   | 'stream:content'
   | 'content:stream';
@@ -35,27 +32,13 @@ const electronHandler = {
     off(channel: Channels, func: (...args: unknown[]) => void) {
       ipcRenderer.removeListener(channel, func);
     },
-    readUserData: () => ipcRenderer.invoke('userData:read'),
-    selectFolder: () => ipcRenderer.invoke('dialog:openDirectory'),
-    getDirectoryStructure: (fileNode: FileNode): Promise<string> =>
-      ipcRenderer.invoke('file:get-directory-structure', fileNode),
-    getTokenCount: (string: string): Promise<number> =>
-      ipcRenderer.invoke('file:get-token-count', string),
-    syncFileNode: (fileNode: FileNode): Promise<FileNode> =>
-      ipcRenderer.invoke('file:sync', fileNode),
-    saveWorkspace: (
-      workspacePath: string,
-      tabData: TabDataArray,
-    ): Promise<void> =>
-      ipcRenderer.invoke('workspace:save', workspacePath, tabData),
-    loadWorkspace: (workspacePath: string): Promise<TabDataArray> =>
-      ipcRenderer.invoke('workspace:load', workspacePath),
+    readAppSettings: () => ipcRenderer.invoke('appSettings:read'),
     updateAppSettings: (
       settings: unknown,
     ): Promise<{ success: boolean; error?: string }> =>
       ipcRenderer.invoke('appSettings:update', settings),
-    estimateToken: (fileNode: FileNode) =>
-      ipcRenderer.invoke('token:estimate', fileNode),
+    getDirectoryStructure: (fileNode: FileNode): Promise<string> =>
+      ipcRenderer.invoke('file:get-directory-structure', fileNode),
     streamContent: (fileNode: FileNode) =>
       ipcRenderer.invoke('stream:content', fileNode),
   },

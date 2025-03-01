@@ -30,11 +30,11 @@ interface State {
 // Define action types
 type Action =
   | { type: 'ADD_FILE_CONTENT'; payload: FileContent[] }
-  | { type: 'REMOVE_FILE_CONTENT'; payload: string[] }
-  | {
-      type: 'SET_FILE_CONTENT';
-      payload: FileContent[];
-    }
+  // | { type: 'REMOVE_FILE_CONTENT'; payload: string[] }
+  // | {
+  //     type: 'SET_FILE_CONTENT';
+  //     payload: FileContent[];
+  //   }
   | { type: 'CLEAR_FILE_CONTENT' };
 
 interface FileContentContextProps {
@@ -78,17 +78,17 @@ function reducer(state: State, action: Action): State {
         fileContents: addFilesToState(state.fileContents, action.payload),
       };
 
-    case 'REMOVE_FILE_CONTENT': // O(n) to filter + create new array
-      return {
-        fileContents: state.fileContents.filter(
-          (file) => !action.payload.includes(file.path),
-        ),
-      };
+    // case 'REMOVE_FILE_CONTENT': // O(n) to filter + create new array
+    //   return {
+    //     fileContents: state.fileContents.filter(
+    //       (file) => !action.payload.includes(file.path),
+    //     ),
+    //   };
 
-    case 'SET_FILE_CONTENT': // O(n log n) due to sorting
-      return {
-        fileContents: sortFilesByPath(action.payload),
-      };
+    // case 'SET_FILE_CONTENT': // O(n log n) due to sorting
+    //   return {
+    //     fileContents: sortFilesByPath(action.payload),
+    //   };
 
     case 'CLEAR_FILE_CONTENT':
       return {

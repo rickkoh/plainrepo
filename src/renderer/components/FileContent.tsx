@@ -5,8 +5,7 @@ import { useFileContentContext } from '../contexts/FileContentContext';
 
 // Constants for height calculation
 const LINE_HEIGHT = 24; // Height of each line in pixels
-const PADDING = 16; // Top/bottom padding for each item
-const HEADER_FOOTER = 56; // Height for file name and closing backticks + margin
+const HEADER_FOOTER = 48; // Height for file name and closing backticks + margin
 
 export default function FileContent() {
   const { fileContents } = useFileContentContext();
@@ -19,7 +18,7 @@ export default function FileContent() {
 
     const contentLines = fileContent.content.split('\n').length;
 
-    return contentLines * LINE_HEIGHT + PADDING; // + HEADER_FOOTER;
+    return (contentLines + 1) * LINE_HEIGHT + HEADER_FOOTER;
   };
 
   // eslint-disable-next-line react/no-unstable-nested-components
@@ -35,8 +34,9 @@ export default function FileContent() {
 
     return (
       <div style={style} className="px-4">
-        <pre className="whitespace-pre font-mono text-base leading-6 overflow-x-auto py-2">
+        <pre className="whitespace-pre font-mono text-base leading-6 overflow-x-auto">
           ```{fileContent.name}
+          <br />
           {fileContent.content}
           ```
         </pre>
@@ -52,17 +52,20 @@ export default function FileContent() {
     <div className="w-full h-full">
       <AutoSizer>
         {({ height, width }) => (
-          <List
-            ref={listRef}
-            height={height}
-            width={width}
-            itemCount={fileContents.length}
-            itemSize={getItemSize}
-            className="overflow-y-auto"
-            overscanCount={2}
-          >
-            {ItemRenderer}
-          </List>
+          <>
+            <pre>Directory Tree</pre>
+            <List
+              ref={listRef}
+              height={height}
+              width={width}
+              itemCount={fileContents.length}
+              itemSize={getItemSize}
+              className="overflow-y-auto"
+              // overscanCount={2}
+            >
+              {ItemRenderer}
+            </List>
+          </>
         )}
       </AutoSizer>
     </div>

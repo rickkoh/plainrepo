@@ -166,14 +166,11 @@ function Tree({
 }
 
 export default function Explorer() {
-  const { workingDir, setWorkingDir } = useWorkspaceContext();
+  const { workingDir } = useWorkspaceContext();
   const { fileNode, setFileNode } = useFileContext();
 
-  const handleClick = async () => {
-    const folder = await window.electron.ipcRenderer.selectFolder();
-    if (folder) {
-      setWorkingDir(folder);
-    }
+  const handleClick = () => {
+    window.electron.ipcRenderer.sendMessage('dialog:openDirectory');
   };
 
   return (

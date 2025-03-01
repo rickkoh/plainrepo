@@ -7,8 +7,6 @@ import shouldExclude, { buildRegexes, getGitIgnorePatterns } from './Excluder';
 const fs = require('fs');
 const path = require('path');
 
-const MAX_SIZE = 4_000_000; // 1 MB for example
-
 /**
  * Build the file node from the root directory
  *
@@ -180,54 +178,6 @@ export function discoverFileNodeContent(node: FileNode): FileNode {
         content: applyReplacements(rawContent, replaceList),
         lastSynced: syncDate,
       };
-    }
-
-    return {
-      ...fileNode,
-      children: fileNode.children?.map((child) => discover(child)),
-    };
-  }
-
-  return discover(node);
-}
-
-/**
- * Sync the file node with content
- *
- * @param node The file node to sync
- * @returns The synced file node
- * @complexity O(n)
- */
-export function syncFileNode(node: FileNode): FileNode {
-  const appSettings = readAppSettings();
-  const replaceList = appSettings.replace || [];
-
-  const syncDate = new Date();
-
-  function discover(fileNode: FileNode): FileNode {
-    if (fileNode.type === 'file' && fileNode.selected) {
-      // In getContent or readContent
-      const stats = fs.statSync(fileNode.path);
-
-      if (stats.size > MAX_SIZE) {
-        return {
-          ...fileNode,
-          lastSynced: syncDate,
-        };
-      }
-      try {
-        const rawContent = fs.readFileSync(fileNode.path, 'utf-8');
-        return {
-          ...fileNode,
-          content: applyReplacements(rawContent, replaceList),
-          lastSynced: syncDate,
-        };
-      } catch (error) {
-        return {
-          ...fileNode,
-          lastSynced: syncDate,
-        };
-      }
     }
 
     return {
