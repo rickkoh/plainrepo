@@ -23,6 +23,7 @@ import { streamGetContent } from './utils/ContentAggregator';
 import { FileNodeSchema } from '../types/FileNode';
 import { readAppSettings, writeAppSettings } from './utils/AppSettings';
 import { FileContent } from '../types/FileContent';
+import TokenEstimator from './utils/TokenEstimator';
 
 class AppUpdater {
   constructor() {
@@ -137,20 +138,31 @@ const createWindow = async () => {
       return null;
     }
 
+    mainWindow.webContents.send('stream:directoryTree', {
+      type: 'SET_DIRECTORY_TREE',
+      payload: generateDirectoryStructure(parsedResult.data),
+    });
+
     const fileNode = parsedResult.data;
-
     const flattenedFileNodes = flattenFileNode(fileNode);
-
     mainWindow.webContents.send('stream:content', {
       type: 'CLEAR_FILE_CONTENT',
     });
-
+    let count = 0;
     streamGetContent(
       flattenedFileNodes,
       (fileContents: FileContent[]) => {
         if (!mainWindow) {
           return;
         }
+        for (let i = 0; i < fileContents.length; i += 1) {
+          const fileContent = fileContents[i];
+          count += TokenEstimator.estimateTokens(fileContent.content);
+        }
+        mainWindow.webContents.send('stream:tokenCount', {
+          type: 'SET_TOKEN_COUNT',
+          payload: count,
+        });
         mainWindow.webContents.send('stream:content', {
           type: 'ADD_FILE_CONTENT',
           payload: fileContents,

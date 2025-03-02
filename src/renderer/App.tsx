@@ -15,6 +15,8 @@ import WorkspaceProvider from './contexts/WorkspaceContext';
 import FileProvider from './contexts/FileContext';
 import FileContent from './components/FileContent';
 import FileContentProvider from './contexts/FileContentContext';
+import DirectoryTreeProvider from './contexts/DirectoryTreeContext';
+import TokenCountProvider from './contexts/TokenCountContext';
 
 function Hello() {
   return (
@@ -22,21 +24,29 @@ function Hello() {
       <AppProvider>
         <WorkspaceProvider>
           <FileProvider>
-            <FileContentProvider>
-              <div className="flex flex-row w-full h-full">
-                <ResizablePanelGroup direction="horizontal">
-                  <ResizablePanel defaultSize={30} minSize={20} maxSize={80}>
-                    <Sidebar />
-                  </ResizablePanel>
-                  <ResizableHandle />
-                  <ResizablePanel>
-                    {/* <TabsPanel /> */}
-                    <FileContent />
-                    <Toolbar />
-                  </ResizablePanel>
-                </ResizablePanelGroup>
-              </div>
-            </FileContentProvider>
+            <DirectoryTreeProvider>
+              <FileContentProvider>
+                <TokenCountProvider>
+                  <div className="flex flex-row w-full h-full">
+                    <ResizablePanelGroup direction="horizontal">
+                      <ResizablePanel
+                        defaultSize={30}
+                        minSize={20}
+                        maxSize={80}
+                      >
+                        <Sidebar />
+                      </ResizablePanel>
+                      <ResizableHandle />
+                      <ResizablePanel>
+                        {/* <TabsPanel /> */}
+                        <FileContent />
+                        <Toolbar />
+                      </ResizablePanel>
+                    </ResizablePanelGroup>
+                  </div>
+                </TokenCountProvider>
+              </FileContentProvider>
+            </DirectoryTreeProvider>
           </FileProvider>
         </WorkspaceProvider>
       </AppProvider>

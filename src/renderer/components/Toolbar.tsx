@@ -8,19 +8,26 @@
 import { cn } from '@/lib/utils';
 import { useCopyToClipboard, useDebounceCallback } from 'usehooks-ts';
 import { Button } from '@/components/ui/button';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { useFileContext } from '../contexts/FileContext';
+import { useTokenCountContext } from '../contexts/TokenCountContext';
+import { useDirectoryTreeContext } from '../contexts/DirectoryTreeContext';
+import { useFileContentContext } from '../contexts/FileContentContext';
 
 export default function Toolbar() {
+  const { directoryTree } = useDirectoryTreeContext();
+
+  const { fileContents } = useFileContentContext();
+
   const { fileNode } = useFileContext();
+
+  const { tokenCount } = useTokenCountContext();
 
   const [, copy] = useCopyToClipboard();
 
   const [isHovering, setIsHovering] = useState(false);
-
-  const [tokenCount, setTokenCount] = useState(0);
 
   const delayedHoverOn = useDebounceCallback(() => {
     setIsHovering(true);
@@ -31,26 +38,29 @@ export default function Toolbar() {
   }, 420);
 
   const copyEverything = async () => {
-    copy('');
+    let content = '';
+
+    content += `${directoryTree}\n`;
+
+    for (let i = 0; i < fileContents.length; i += 1) {
+      content += `\`\`\`${fileContents[i].name}\n${fileContents[i].content}\n\`\`\`\n`;
+    }
+
+    copy(content);
   };
 
   const copyContent = async () => {
-    copy('');
+    let content = '';
+    for (let i = 0; i < fileContents.length; i += 1) {
+      content += `\`\`\`${fileContents[i].name}\n${fileContents[i].content}\n\`\`\`\n`;
+    }
+
+    copy(content);
   };
 
   const copyDirectoryTree = async () => {
-    copy('');
+    copy(directoryTree);
   };
-
-  useEffect(() => {
-    // @ts-ignore
-    window.electron.ipcRenderer.on('stream:token-count', setTokenCount);
-
-    return () => {
-      // @ts-ignore
-      window.electron.ipcRenderer.off('stream:token-count', setTokenCount);
-    };
-  }, []);
 
   if (!fileNode) {
     return null;

@@ -8,8 +8,9 @@ export type Channels =
   | 'dialog:openDirectory'
   | 'workspace:path'
   | 'workspace:fileNode'
-  | 'stream:token-count'
   | 'stream:content'
+  | 'stream:tokenCount'
+  | 'stream:directoryTree'
   | 'content:stream';
 
 const electronHandler = {
@@ -37,8 +38,6 @@ const electronHandler = {
       settings: unknown,
     ): Promise<{ success: boolean; error?: string }> =>
       ipcRenderer.invoke('appSettings:update', settings),
-    getDirectoryStructure: (fileNode: FileNode): Promise<string> =>
-      ipcRenderer.invoke('file:get-directory-structure', fileNode),
     streamContent: (fileNode: FileNode) =>
       ipcRenderer.invoke('stream:content', fileNode),
   },
