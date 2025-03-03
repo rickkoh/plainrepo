@@ -35,3 +35,7 @@ export function processIncrements(
     processFunction(currentPrefix);
   }
 }
+
+export function betterNumberFormat(num: number): string {
+  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}

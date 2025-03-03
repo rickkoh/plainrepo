@@ -8,20 +8,6 @@ import {
   useEffect,
 } from 'react';
 
-/**
- * Each tab will still maintain their version of file node with all the selected files
- * When we select new files O(n), we will send that back to the backend
- * The backend will flatten it O(n)
- * Then it will chunk it O(n)
- * Then it will discover the file nodes content O(n)
- * Then it will send it back to the frontend chunk by chunk
- * The operations must can be done either through: ADD_FILE_CONTENT O(nlogn), REMOVE_FILE_CONTENT O(n), SET_FILE_CONTENT O(n), CLEAR_FILE_CONTENT O(1)
- * fileContent will be the state that will be used to for other components to render the content of the files
- * Total time complexity: O(n + n + n + n + nlogn) or O(n + n + n + n) or O(n + n + n + n) or O(n + n + n + 1) which is O(nlogn)
- * REndering will be handled using virtualization
- * TODO NEXT: Make it a single tabbed application
- */
-
 // Define the state interface
 interface State {
   fileContents: FileContent[];

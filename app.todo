@@ -1,12 +1,12 @@
 Version 1.0.0-alpha (Unreleased):
-  ☐ Menu
-    ☐ File (open)
-  ☐ Change directory in app
-    ☐ Optimise performance when changing directory
-  ☐ Write test
-  ☐ Write release notes
-  ☐ Optimise file node performance
-  ☐ Decide and fix autosync
+  ✔ Menu @done(25-03-03 13:11)
+    ✔ File (open) @done(25-03-03 13:11)
+  ✔ Change directory in app @done(25-03-03 13:11)
+    ✔ Optimise performance when changing directory @done(25-03-03 13:11)
+  ✔ Write test @done(25-03-03 13:11)
+  ✔ Write release notes @done(25-03-03 13:11)
+  ✔ Optimise file node performance @done(25-03-03 13:11)
+  ✔ Decide and fix autosync @done(25-03-03 13:11)
   ✔ Better copy @done(25-02-24 01:24)
     ✔ Copy directory tree only @done(25-02-24 01:24)
     ✔ Copy content only @done(25-02-24 01:24)
@@ -50,6 +50,7 @@ Version 1.0.0-rc:
   ✔ Change directory in app @done(25-03-03 01:17)
     ✔ Optimise performance when changing directory @done(25-03-03 01:17)
   ☐ Decide on how to handle context
+  ✔ Display directory tree @done(25-03-03 15:57)
   ☐ Perhaps move copy to backend
   ☐ Copy limit
   ☐ Stats

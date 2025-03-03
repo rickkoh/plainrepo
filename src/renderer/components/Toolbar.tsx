@@ -5,23 +5,24 @@
  * @returns Toolbar
  */
 
-import { cn } from '@/lib/utils';
+import { betterNumberFormat, cn } from '@/lib/utils';
 import { useCopyToClipboard, useDebounceCallback } from 'usehooks-ts';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import TokenEstimator from '@/src/main/utils/TokenEstimator';
 
-import { useFileContext } from '../contexts/FileContext';
 import { useTokenCountContext } from '../contexts/TokenCountContext';
 import { useDirectoryTreeContext } from '../contexts/DirectoryTreeContext';
 import { useFileContentContext } from '../contexts/FileContentContext';
+import { useAppContext } from '../contexts/AppContext';
 
 export default function Toolbar() {
+  const { copyLimit } = useAppContext();
+
   const { directoryTree } = useDirectoryTreeContext();
 
   const { fileContents } = useFileContentContext();
-
-  const { fileNode } = useFileContext();
 
   const { tokenCount } = useTokenCountContext();
 
@@ -43,28 +44,53 @@ export default function Toolbar() {
     content += `${directoryTree}\n`;
 
     for (let i = 0; i < fileContents.length; i += 1) {
-      content += `\`\`\`${fileContents[i].name}\n${fileContents[i].content}\n\`\`\`\n`;
+      content += `\`\`\`${fileContents[i].name}\n${fileContents[i].content}\n\`\`\`\n\n`;
     }
 
-    copy(content);
+    const estimated = TokenEstimator.estimateTokens(content);
+
+    console.log(estimated);
+
+    if (estimated <= copyLimit) {
+      copy(content);
+      toast('Copied everything');
+    } else {
+      toast(`Token count exceeds limit of ${betterNumberFormat(copyLimit)}`);
+    }
+    delayedHoverOn.cancel();
+    setIsHovering(false);
   };
 
   const copyContent = async () => {
     let content = '';
     for (let i = 0; i < fileContents.length; i += 1) {
-      content += `\`\`\`${fileContents[i].name}\n${fileContents[i].content}\n\`\`\`\n`;
+      content += `\`\`\`${fileContents[i].name}\n${fileContents[i].content}\n\`\`\`\n\n`;
     }
 
-    copy(content);
+    const estimated = TokenEstimator.estimateTokens(content);
+
+    if (estimated <= copyLimit) {
+      copy(content);
+      toast('Copied contents only');
+    } else {
+      toast(`Token count exceeds limit of ${betterNumberFormat(copyLimit)}`);
+    }
+    setIsHovering(false);
+    delayedHoverOn.cancel();
   };
 
   const copyDirectoryTree = async () => {
-    copy(directoryTree);
-  };
+    const estimated = TokenEstimator.estimateTokens(directoryTree);
 
-  if (!fileNode) {
-    return null;
-  }
+    if (estimated <= copyLimit) {
+      copy(directoryTree);
+      toast('Copied directory tree');
+    } else {
+      toast(`Token count exceeds limit of ${betterNumberFormat(copyLimit)}`);
+    }
+    setIsHovering(false);
+    delayedHoverOn.cancel();
+  };
 
   return (
     <div className="fixed bottom-8 right-8">
@@ -89,9 +115,6 @@ export default function Toolbar() {
             className="flex px-2 py-1"
             onClick={() => {
               copyEverything();
-              toast('Copied everything');
-              delayedHoverOn.cancel();
-              setIsHovering(false);
             }}
           >
             Copy
@@ -108,9 +131,6 @@ export default function Toolbar() {
             style={{ marginBottom: isHovering ? `54px` : `0` }}
             onClick={() => {
               copyEverything();
-              toast('Copied everything');
-              delayedHoverOn.cancel();
-              setIsHovering(false);
             }}
           >
             Copy Everything
@@ -127,9 +147,6 @@ export default function Toolbar() {
             style={{ marginBottom: isHovering ? `100px` : '0px' }}
             onClick={() => {
               copyContent();
-              setIsHovering(false);
-              toast('Copied contents only');
-              delayedHoverOn.cancel();
             }}
           >
             Copy Content
@@ -146,9 +163,6 @@ export default function Toolbar() {
             style={{ marginBottom: isHovering ? `146px` : '0px' }}
             onClick={() => {
               copyDirectoryTree();
-              setIsHovering(false);
-              toast('Copied directory tree');
-              delayedHoverOn.cancel();
             }}
           >
             Copy Directory Tree

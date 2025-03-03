@@ -138,9 +138,17 @@ const createWindow = async () => {
       return null;
     }
 
+    const directoryTree = generateDirectoryStructure(parsedResult.data);
+
     mainWindow.webContents.send('stream:directoryTree', {
       type: 'SET_DIRECTORY_TREE',
-      payload: generateDirectoryStructure(parsedResult.data),
+      payload: directoryTree,
+    });
+
+    let count = TokenEstimator.estimateTokens(directoryTree);
+    mainWindow.webContents.send('stream:tokenCount', {
+      type: 'SET_TOKEN_COUNT',
+      payload: count,
     });
 
     const fileNode = parsedResult.data;
@@ -148,7 +156,6 @@ const createWindow = async () => {
     mainWindow.webContents.send('stream:content', {
       type: 'CLEAR_FILE_CONTENT',
     });
-    let count = 0;
     streamGetContent(
       flattenedFileNodes,
       (fileContents: FileContent[]) => {
@@ -168,10 +175,9 @@ const createWindow = async () => {
           payload: fileContents,
         });
       },
-      { size: 100 },
+      { size: 1000 },
     );
 
-    console.log('reached 6');
     return null;
   });
 

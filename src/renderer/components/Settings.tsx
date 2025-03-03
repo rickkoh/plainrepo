@@ -4,6 +4,7 @@ import { MoveRight, X } from 'lucide-react';
 import { PropsWithChildren, useCallback, useState } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ExcludeItem, ReplaceItem } from '@/src/types/AppSettings';
+import { Input } from '@/components/ui/input';
 
 import { useAppContext } from '../contexts/AppContext';
 import EditableListItem from './Forms/EditableListItem';
@@ -50,6 +51,8 @@ export default function Settings() {
     setExclude,
     replace,
     setReplace,
+    copyLimit,
+    setCopyLimit,
   } = useAppContext();
 
   const [newExcludeText, setNewExcludeText] = useState<ExcludeItem>('');
@@ -261,6 +264,22 @@ export default function Settings() {
               </Button>
             )}
           </SettingsItemContent>
+        </SettingsItem>
+        <SettingsItem>
+          <SettingsItemHeader>
+            Copy: <b>Limit</b>
+          </SettingsItemHeader>
+          <SettingsItemDescription>
+            By default, limit is set to 500,000 characters as to prevent the
+            application from crashing when copying large amounts of text. It is
+            also unlikely that you would need to copy more than this amount of
+            text.
+          </SettingsItemDescription>
+          <Input
+            type="number"
+            value={copyLimit}
+            onChange={(e) => setCopyLimit(Number(e.target.value))}
+          />
         </SettingsItem>
       </div>
     </div>

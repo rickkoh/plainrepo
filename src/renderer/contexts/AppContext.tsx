@@ -20,15 +20,25 @@ const updateAppSettings = (settings: AppSettings) => {
   window.electron.ipcRenderer.updateAppSettings(settings);
 };
 
+// I can have the limit here, then I read from this limit, but
+// everyutime the limit change, I will have to change my settings
+
+// Not sure if limit should be kept backend
+// When we trigger the copy, the copy wil lread the settings
+// And then it should get the content of all files
+// The thing is, we have to reread the entire file node to get the filecontent
+// Since the content is stored on the frontend and not on the backend
 interface AppContextProps {
   isDarkMode: boolean;
   toggleDarkMode: () => void;
   shouldIncludeGitIgnore: boolean;
   setShouldIncludeGitIgnore: (shouldIncludeGitIgnore: boolean) => void;
+  copyLimit: number;
   exclude: ExcludeList;
   setExclude: (excludeList: ExcludeList) => void;
   replace: ReplaceList;
   setReplace: (replaceList: ReplaceList) => void;
+  setCopyLimit: (newCopyLimit: number) => void;
 }
 
 export const AppContext = createContext<AppContextProps | undefined>(undefined);
@@ -43,6 +53,8 @@ export default function AppProvider({
     darkMode: false,
     exclude: [],
     replace: [],
+    shouldIncludeGitIgnore: true,
+    copyLimit: 500000,
   });
 
   // Update functions.
@@ -82,6 +94,15 @@ export default function AppProvider({
     [appSettings],
   );
 
+  const setCopyLimit = useCallback(
+    (newCopyLimit: number) => {
+      const newSettings = { ...appSettings, copyLimit: newCopyLimit };
+      setAppSettings(newSettings);
+      updateAppSettings(newSettings);
+    },
+    [appSettings],
+  );
+
   const isDarkMode = useMemo(
     () => appSettings.darkMode ?? false,
     [appSettings.darkMode],
@@ -100,6 +121,11 @@ export default function AppProvider({
   const replace = useMemo(
     () => appSettings.replace ?? [],
     [appSettings.replace],
+  );
+
+  const copyLimit = useMemo(
+    () => appSettings.copyLimit ?? 500000,
+    [appSettings.copyLimit],
   );
 
   // Load initial settings on mount.
@@ -122,21 +148,25 @@ export default function AppProvider({
       isDarkMode,
       toggleDarkMode,
       shouldIncludeGitIgnore,
+      copyLimit,
       setShouldIncludeGitIgnore,
       exclude,
       setExclude,
       replace,
       setReplace,
+      setCopyLimit,
     }),
     [
       isDarkMode,
       toggleDarkMode,
       shouldIncludeGitIgnore,
+      copyLimit,
       setShouldIncludeGitIgnore,
       exclude,
       setExclude,
       replace,
       setReplace,
+      setCopyLimit,
     ],
   );
 

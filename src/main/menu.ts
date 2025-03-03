@@ -220,6 +220,9 @@ export default class MenuBuilder {
           {
             label: '&Open',
             accelerator: 'Ctrl+O',
+            click: () => {
+              ipcMain.emit('dialog:openDirectory');
+            },
           },
           {
             label: '&Close',

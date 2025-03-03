@@ -1,26 +1,47 @@
-import React, { useRef } from 'react';
+import React, { useCallback, useRef, useEffect } from 'react';
 import { VariableSizeList as List } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useFileContentContext } from '../contexts/FileContentContext';
 import { useDirectoryTreeContext } from '../contexts/DirectoryTreeContext';
 
-// Constants for height calculation
-const LINE_HEIGHT = 24; // Height of each line in pixels
-const HEADER_FOOTER = 48; // Height for file name and closing backticks + margin
+const LINE_HEIGHT = 24;
+const HEADER_FOOTER = 48;
+const GAP = 24;
 
 export default function FileContent() {
   const { directoryTree } = useDirectoryTreeContext();
   const { fileContents } = useFileContentContext();
   const listRef = useRef<List>(null);
 
+  // Reset the list cache whenever fileContents changes
+  useEffect(() => {
+    if (listRef.current) {
+      listRef.current.resetAfterIndex(0);
+    }
+  }, [fileContents]);
+
   // Calculate item size based on number of lines
   const getItemSize = (index: number) => {
     const fileContent = fileContents[index];
+    if (!fileContent) {
+      return 0;
+    }
 
-    const contentLines = fileContent.content.split('\n').length;
+    let contentLines = fileContent.content.split('\n').length;
 
-    return (contentLines + 1) * LINE_HEIGHT + HEADER_FOOTER;
+    if (index === 0) {
+      contentLines += directoryTree.split('\n').length - 1;
+    }
+
+    // console.log(`Total number of lines for ${index} is ${contentLines}`);
+
+    return contentLines * LINE_HEIGHT + HEADER_FOOTER + GAP;
   };
+
+  const getItemKey = useCallback(
+    (index: number) => fileContents[index]?.path || index.toString(),
+    [fileContents],
+  );
 
   // eslint-disable-next-line react/no-unstable-nested-components
   function ItemRenderer({
@@ -35,10 +56,18 @@ export default function FileContent() {
 
     return (
       <div style={style} className="px-4">
-        <pre className="whitespace-pre font-mono text-base leading-6 overflow-x-auto">
+        <pre
+          className="whitespace-pre font-mono text-base"
+          style={{
+            lineHeight: `${LINE_HEIGHT}px`,
+          }}
+        >
+          {index === 0 && directoryTree}
+          <br />
           ```{fileContent.name}
           <br />
           {fileContent.content}
+          <br />
           ```
         </pre>
       </div>
@@ -50,23 +79,20 @@ export default function FileContent() {
   }
 
   return (
-    <div className="flex flex-col w-full h-full overflow-hidden">
-      <pre className="p-4 h-1/2 overflow-scroll">{directoryTree}</pre>
-      <AutoSizer>
-        {({ height, width }) => (
-          <List
-            ref={listRef}
-            height={height / 2}
-            width={width}
-            itemCount={fileContents.length}
-            itemSize={getItemSize}
-            className="overflow-y-auto"
-            // overscanCount={2}
-          >
-            {ItemRenderer}
-          </List>
-        )}
-      </AutoSizer>
-    </div>
+    <AutoSizer>
+      {({ height, width }) => (
+        <List
+          ref={listRef}
+          height={height}
+          width={width}
+          itemCount={fileContents.length}
+          itemSize={getItemSize}
+          itemKey={getItemKey}
+          overscanCount={3}
+        >
+          {ItemRenderer}
+        </List>
+      )}
+    </AutoSizer>
   );
 }
