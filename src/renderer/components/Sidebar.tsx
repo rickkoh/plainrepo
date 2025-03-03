@@ -1,3 +1,4 @@
+// File: src/renderer/components/Sidebar.tsx
 import { Tabs, TabsContent, TabsList } from '@/components/ui/tabs';
 import {
   Files,
@@ -8,11 +9,12 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
-
+import { useAppDispatch, useAppSelector } from '../redux/hooks';
+import { selectDarkMode } from '../redux/selectors/appSelectors';
+import { toggleDarkMode } from '../redux/slices/appSlice';
 import Search from './Search';
 import Explorer from './Explorer';
 import Settings from './Settings';
-import { useAppContext } from '../contexts/AppContext';
 
 enum Tab {
   ExplorerTab = 'explorer',
@@ -21,8 +23,14 @@ enum Tab {
 }
 
 export default function Sidebar() {
-  const { isDarkMode, toggleDarkMode } = useAppContext();
+  const dispatch = useAppDispatch();
+  const isDarkMode = useAppSelector(selectDarkMode);
   const [activeTab, setActiveTab] = useState(Tab.ExplorerTab);
+
+  const handleToggleDarkMode = () => {
+    console.log('dispatching');
+    dispatch(toggleDarkMode());
+  };
 
   return (
     <Tabs
@@ -44,18 +52,7 @@ export default function Sidebar() {
         </button>
         <button
           type="button"
-          onClick={() => setActiveTab(Tab.SearchTab)}
-          className={cn(
-            'border-l-2 border-background py-4 px-2 text-muted-foreground',
-            'hover:text-foreground',
-            activeTab === 'search' && 'text-foreground border-foreground',
-          )}
-        >
-          <SearchIcon />
-        </button>
-        <button
-          type="button"
-          onClick={() => toggleDarkMode()}
+          onClick={handleToggleDarkMode}
           className={cn(
             'border-l-2 border-background py-4 px-2 text-muted-foreground mt-auto',
             'hover:text-foreground',
@@ -82,13 +79,6 @@ export default function Sidebar() {
         className="w-full h-full mt-0 data-[state=inactive]:hidden"
       >
         <Explorer />
-      </TabsContent>
-      <TabsContent
-        value="search"
-        forceMount
-        className="w-full h-full mt-0 data-[state=inactive]:hidden"
-      >
-        <Search />
       </TabsContent>
       <TabsContent
         value="settings"

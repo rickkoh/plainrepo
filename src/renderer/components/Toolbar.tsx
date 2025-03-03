@@ -1,33 +1,23 @@
-/**
- * Show directory structure
- * Show number of tokens
- * Copy button
- * @returns Toolbar
- */
-
+// File: src/renderer/components/Toolbar.tsx
 import { betterNumberFormat, cn } from '@/lib/utils';
 import { useCopyToClipboard, useDebounceCallback } from 'usehooks-ts';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import TokenEstimator from '@/src/main/utils/TokenEstimator';
-
-import { useTokenCountContext } from '../contexts/TokenCountContext';
-import { useDirectoryTreeContext } from '../contexts/DirectoryTreeContext';
-import { useFileContentContext } from '../contexts/FileContentContext';
-import { useAppContext } from '../contexts/AppContext';
+import { useAppSelector } from '../redux/hooks';
+import { selectTokenCount } from '../redux/selectors/tokenCountSelectors';
+import { selectDirectoryTree } from '../redux/selectors/directoryTreeSelectors';
+import { selectAllFileContents } from '../redux/selectors/fileContentsSelectors';
+import { selectCopyLimit } from '../redux/selectors/appSelectors';
 
 export default function Toolbar() {
-  const { copyLimit } = useAppContext();
-
-  const { directoryTree } = useDirectoryTreeContext();
-
-  const { fileContents } = useFileContentContext();
-
-  const { tokenCount } = useTokenCountContext();
+  const copyLimit = useAppSelector(selectCopyLimit);
+  const directoryTree = useAppSelector(selectDirectoryTree);
+  const fileContents = useAppSelector(selectAllFileContents);
+  const tokenCount = useAppSelector(selectTokenCount);
 
   const [, copy] = useCopyToClipboard();
-
   const [isHovering, setIsHovering] = useState(false);
 
   const delayedHoverOn = useDebounceCallback(() => {
@@ -40,7 +30,6 @@ export default function Toolbar() {
 
   const copyEverything = async () => {
     let content = '';
-
     content += `${directoryTree}\n`;
 
     for (let i = 0; i < fileContents.length; i += 1) {
@@ -48,8 +37,6 @@ export default function Toolbar() {
     }
 
     const estimated = TokenEstimator.estimateTokens(content);
-
-    console.log(estimated);
 
     if (estimated <= copyLimit) {
       copy(content);
@@ -97,6 +84,9 @@ export default function Toolbar() {
       <div className="flex flex-row justify-center gap-4 p-2 rounded-md bg-accent">
         <button type="button" className="px-2 py-1">
           {tokenCount} Tokens
+        </button>
+        <button type="button" className="px-2 py-1">
+          {betterNumberFormat(123)} Bytes
         </button>
         <div
           className="relative"

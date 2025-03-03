@@ -1,191 +1,123 @@
-/* eslint-disable react/require-default-props */
-/* eslint-disable no-console */
-import { useEffect, useState } from 'react';
+// File: src/renderer/components/Explorer.tsx
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { useForm } from 'react-hook-form';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormMessage,
-} from '@/components/ui/form';
-import { cn, processIncrements } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { CheckedState } from '@radix-ui/react-checkbox';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { ChevronRight } from 'lucide-react';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useDebounceCallback } from 'usehooks-ts';
-
-import { FileNode, FileNodeSchema } from '../../types/FileNode';
-import { useWorkspaceContext } from '../contexts/WorkspaceContext';
-import { useFileContext } from '../contexts/FileContext';
+import { useAppDispatch, useAppSelector } from '../redux/hooks';
+import { updateFileSelection } from '../redux/slices/filesSlice';
+import { FileNode } from '../../types/FileNode';
+import { toggleFileSelectionInTab } from '../redux/slices/tabsSlice';
+import { selectActiveTabId } from '../redux/selectors/tabsSelectors';
+import { openDirectory, streamContent } from '../redux/slices/workspaceSlice';
+import {
+  selectFileNode,
+  selectWorkingDir,
+} from '../redux/selectors/workspaceSelector';
 
 function TreeNode({
   fileNode,
-  form,
-  isRoot = false,
-  fieldString = '',
   level = 1,
 }: {
   fileNode: FileNode;
-  form: any;
-  isRoot?: boolean;
-  fieldString?: string;
   level?: number;
 }) {
-  const [open, setOpen] = useState<CheckedState>(isRoot ?? false);
+  const dispatch = useAppDispatch();
+  const activeTabId = useAppSelector(selectActiveTabId);
+  const [open, setOpen] = useState<CheckedState>(level === 1 || false);
+
+  const handleCheckboxChange = (checked: CheckedState) => {
+    if (!activeTabId) return;
+
+    // Update the file selection in the Redux store
+    dispatch(
+      updateFileSelection({
+        path: fileNode.path,
+        selected: checked === true,
+      }),
+    );
+
+    // Update the tab selection
+    dispatch(
+      toggleFileSelectionInTab({
+        tabId: activeTabId,
+        filePath: fileNode.path,
+      }),
+    );
+  };
 
   return (
-    <FormField
-      control={form.control}
-      name={`${fieldString}.selected`}
-      render={({ field }) => {
-        const handleOnCheckedChange = (checkedState: CheckedState) => {
-          const applySelection = (node: FileNode, state: CheckedState) => {
-            if (node.type === 'directory' && node.children) {
-              node.children.forEach((child) => {
-                applySelection(child, state);
-              });
-            }
-            const checked: boolean = state === 'indeterminate' ? false : state;
-            node.selected = checked;
-          };
+    <div key={fileNode.path} className="flex flex-col">
+      <div
+        className="flex flex-row items-center space-x-2 hover:bg-accent"
+        style={{ paddingLeft: `${level * 16}px` }}
+      >
+        <button
+          type="button"
+          className={cn(
+            fileNode.type === 'file' && 'opacity-0 pointer-events-none',
+          )}
+          onClick={() => setOpen(!open)}
+        >
+          <ChevronRight className={cn(open && 'rotate-90')} />
+        </button>
+        <Checkbox
+          id={fileNode.path}
+          checked={fileNode.selected || false}
+          onCheckedChange={handleCheckboxChange}
+        />
+        <Label
+          htmlFor={fileNode.path}
+          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+        >
+          {fileNode.name}
+        </Label>
+      </div>
 
-          if (fileNode !== undefined) {
-            applySelection(fileNode, checkedState);
-          }
-
-          if (fieldString === '') {
-            form.reset(fileNode);
-          } else {
-            form.setValue(`${fieldString}`, fileNode);
-          }
-
-          // Update parents
-          if (checkedState) {
-            form.setValue(`.selected`, checkedState);
-            processIncrements(fieldString, (prefix: string) => {
-              form.setValue(`${prefix}.selected`, checkedState);
-            });
-          }
-
-          field.onChange(checkedState);
-        };
-
-        return (
-          <div key={fileNode.path} className="flex flex-col">
-            <FormItem>
-              <FormControl>
-                <div
-                  className="flex flex-row items-center space-x-2 hover:bg-accent"
-                  style={{ paddingLeft: `${level * 16}px` }}
-                >
-                  <button
-                    type="button"
-                    className={cn(
-                      fileNode.type === 'file' &&
-                        'opacity-0 pointer-events-none',
-                    )}
-                    onClick={() => setOpen(!open)}
-                  >
-                    <ChevronRight className={cn(open && 'rotate-90')} />
-                  </button>
-                  <Checkbox
-                    id={fileNode.path}
-                    checked={field.value}
-                    onCheckedChange={handleOnCheckedChange}
-                  />
-                  <Label
-                    htmlFor={fileNode.path}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    {fileNode.name}
-                  </Label>
-                </div>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-
-            <div className="flex flex-col gap-4">
-              {fileNode.type === 'directory' && open && (
-                <div>
-                  {fileNode.children &&
-                    fileNode.children.map((child, index) => (
-                      <TreeNode
-                        key={child.path}
-                        fileNode={child}
-                        form={form}
-                        fieldString={`${fieldString}${isRoot ? '' : '.'}children.${index}`}
-                        level={level + 1}
-                      />
-                    ))}
-                </div>
-              )}
-            </div>
+      <div className="flex flex-col gap-4">
+        {fileNode.type === 'directory' && open && (
+          <div>
+            {fileNode.children &&
+              fileNode.children.map((child) => (
+                <TreeNode key={child.path} fileNode={child} level={level + 1} />
+              ))}
           </div>
-        );
-      }}
-    />
-  );
-}
-
-function Tree({
-  fileNode,
-  onStructureChange = () => {},
-}: {
-  fileNode: FileNode;
-  onStructureChange?: (fileNode: FileNode) => void;
-}) {
-  const form = useForm<FileNode>({
-    resolver: zodResolver(FileNodeSchema),
-    values: fileNode,
-  });
-
-  const debouncedOnStructureChange = useDebounceCallback((values) => {
-    if (onStructureChange) {
-      const tempFileNode = FileNodeSchema.parse(values);
-      onStructureChange(tempFileNode);
-    }
-  }, 0);
-
-  useEffect(() => {
-    const subscription = form.watch(debouncedOnStructureChange);
-    return () => subscription.unsubscribe();
-  }, [debouncedOnStructureChange, form]);
-
-  return (
-    // eslint-disable-next-line react/jsx-props-no-spreading
-    <Form {...form}>
-      <form className="w-full h-full py-4 overflow-x-scroll bg-background">
-        <TreeNode fileNode={fileNode} form={form} isRoot />
-      </form>
-    </Form>
+        )}
+      </div>
+    </div>
   );
 }
 
 export default function Explorer() {
-  const { workingDir } = useWorkspaceContext();
-  const { fileNode, setFileNode } = useFileContext();
+  const dispatch = useAppDispatch();
+  const workingDir = useAppSelector(selectWorkingDir);
+  const fileNode = useAppSelector(selectFileNode);
 
   const handleClick = () => {
-    window.electron.ipcRenderer.sendMessage('dialog:openDirectory');
+    dispatch(openDirectory());
+  };
+
+  const handleStreamContent = () => {
+    if (fileNode) {
+      dispatch(streamContent(fileNode));
+    }
   };
 
   return (
     <div className="flex flex-col items-start w-full h-full max-h-screen pt-4 overflow-hidden bg-background">
       <pre className="px-4 whitespace-nowrap text-sm">
-        Explorer: {JSON.stringify(workingDir)}
+        Explorer: {workingDir || 'No directory selected'}
       </pre>
 
       {fileNode && (
-        <Tree
-          fileNode={fileNode}
-          onStructureChange={(dir) => {
-            setFileNode(dir);
-          }}
-        />
+        <div className="w-full h-full py-4 overflow-x-scroll bg-background">
+          <TreeNode fileNode={fileNode} />
+          <Button className="mt-4 ml-4" onClick={handleStreamContent}>
+            Refresh Content
+          </Button>
+        </div>
       )}
 
       {!fileNode && (

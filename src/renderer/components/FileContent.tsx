@@ -1,16 +1,18 @@
+// File: src/renderer/components/FileContent.tsx
 import React, { useCallback, useRef, useEffect } from 'react';
 import { VariableSizeList as List } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
-import { useFileContentContext } from '../contexts/FileContentContext';
-import { useDirectoryTreeContext } from '../contexts/DirectoryTreeContext';
+import { useAppSelector } from '../redux/hooks';
+import { selectDirectoryTree } from '../redux/selectors/directoryTreeSelectors';
+import { selectAllFileContents } from '../redux/selectors/fileContentsSelectors';
 
 const LINE_HEIGHT = 24;
 const HEADER_FOOTER = 48;
 const GAP = 24;
 
 export default function FileContent() {
-  const { directoryTree } = useDirectoryTreeContext();
-  const { fileContents } = useFileContentContext();
+  const directoryTree = useAppSelector(selectDirectoryTree);
+  const fileContents = useAppSelector(selectAllFileContents);
   const listRef = useRef<List>(null);
 
   // Reset the list cache whenever fileContents changes
@@ -32,8 +34,6 @@ export default function FileContent() {
     if (index === 0) {
       contentLines += directoryTree.split('\n').length - 1;
     }
-
-    // console.log(`Total number of lines for ${index} is ${contentLines}`);
 
     return contentLines * LINE_HEIGHT + HEADER_FOOTER + GAP;
   };

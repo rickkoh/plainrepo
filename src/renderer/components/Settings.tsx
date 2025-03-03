@@ -1,12 +1,26 @@
-/* eslint-disable jsx-a11y/label-has-associated-control */
+// File: src/renderer/components/Settings.tsx
 import { Button } from '@/components/ui/button';
 import { MoveRight, X } from 'lucide-react';
 import { PropsWithChildren, useCallback, useState } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ExcludeItem, ReplaceItem } from '@/src/types/AppSettings';
 import { Input } from '@/components/ui/input';
-
-import { useAppContext } from '../contexts/AppContext';
+import { useAppDispatch, useAppSelector } from '../redux/hooks';
+import {
+  selectShouldIncludeGitIgnore,
+  selectExclude,
+  selectReplace,
+  selectCopyLimit,
+} from '../redux/selectors/appSelectors';
+import {
+  setShouldIncludeGitIgnore,
+  setCopyLimit,
+  addExclude,
+  removeExclude,
+  updateExclude,
+  addReplace,
+  removeReplace,
+} from '../redux/slices/appSlice';
 import EditableListItem from './Forms/EditableListItem';
 
 interface SettingsItemProps {}
@@ -44,43 +58,33 @@ function SettingsItemContent({
 }
 
 export default function Settings() {
-  const {
-    shouldIncludeGitIgnore,
-    setShouldIncludeGitIgnore,
-    exclude,
-    setExclude,
-    replace,
-    setReplace,
-    copyLimit,
-    setCopyLimit,
-  } = useAppContext();
+  const dispatch = useAppDispatch();
+  const shouldIncludeGitIgnore = useAppSelector(selectShouldIncludeGitIgnore);
+  const exclude = useAppSelector(selectExclude);
+  const replace = useAppSelector(selectReplace);
+  const copyLimit = useAppSelector(selectCopyLimit);
 
   const [newExcludeText, setNewExcludeText] = useState<ExcludeItem>('');
-
   const [showAddExclude, setShowAddExclude] = useState(false);
 
   const [newReplace, setNewReplace] = useState<ReplaceItem>({
     from: '',
     to: '',
   });
-
   const [showAddReplace, setShowAddReplace] = useState(false);
 
   function handleRemoveExclude(index: number) {
-    const setSet = [...exclude];
-    setSet.splice(index, 1);
-    setExclude(setSet);
+    dispatch(removeExclude(index));
   }
 
   function handleEditExclude(index: number, newText: string) {
-    const setSet = [...exclude];
-    setSet[index] = newText;
-    setExclude(setSet);
+    dispatch(updateExclude({ index, value: newText }));
   }
 
   function handleAddExclude() {
-    setExclude([...exclude, newExcludeText]);
+    dispatch(addExclude(newExcludeText));
     setNewExcludeText('');
+    setShowAddExclude(false);
   }
 
   const handleCancelAddExclude = useCallback(() => {
@@ -89,14 +93,13 @@ export default function Settings() {
   }, []);
 
   function handleRemoveReplace(index: number) {
-    const setSet = [...replace];
-    setSet.splice(index, 1);
-    setReplace(setSet);
+    dispatch(removeReplace(index));
   }
 
   function handleAddReplace() {
-    setReplace([...replace, newReplace]);
+    dispatch(addReplace(newReplace));
     setNewReplace({ from: '', to: '' });
+    setShowAddReplace(false);
   }
 
   const handleCancelAddReplace = useCallback(() => {
@@ -170,8 +173,12 @@ export default function Settings() {
             id="includeGitIgnore"
             checked={shouldIncludeGitIgnore}
             onCheckedChange={(checkedState) =>
-              setShouldIncludeGitIgnore(
-                checkedState === 'indeterminate' ? false : checkedState,
+              dispatch(
+                setShouldIncludeGitIgnore(
+                  checkedState === 'indeterminate'
+                    ? false
+                    : checkedState === true,
+                ),
               )
             }
           />
@@ -199,9 +206,6 @@ export default function Settings() {
                 <span className="w-full">{item.from}</span>
                 <MoveRight />
                 <span className="w-full">{item.to}</span>
-                {/* <button type="button">
-                  <Edit2 className="w-4 h-4" />
-                </button> */}
                 <button type="button" onClick={() => handleRemoveReplace(i)}>
                   <X className="w-5 h-5" />
                 </button>
@@ -278,7 +282,7 @@ export default function Settings() {
           <Input
             type="number"
             value={copyLimit}
-            onChange={(e) => setCopyLimit(Number(e.target.value))}
+            onChange={(e) => dispatch(setCopyLimit(Number(e.target.value)))}
           />
         </SettingsItem>
       </div>
