@@ -12,20 +12,20 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import TokenEstimator from '@/src/main/utils/TokenEstimator';
 
-import { useTokenCountContext } from '../contexts/TokenCountContext';
-import { useDirectoryTreeContext } from '../contexts/DirectoryTreeContext';
-import { useFileContentContext } from '../contexts/FileContentContext';
 import { useAppSelector } from '../redux/hooks';
 import { selectCopyLimit } from '../redux/selectors/appSelectors';
+import { selectFileContents } from '../redux/selectors/fileContentsSelectors';
+import { selectDirectoryTree } from '../redux/selectors/filesSelectors';
+import { selectTokenCount } from '../redux/selectors/statsSelectors';
 
 export default function Toolbar() {
   const copyLimit = useAppSelector(selectCopyLimit);
 
-  const { directoryTree } = useDirectoryTreeContext();
+  const directoryTree = useAppSelector(selectDirectoryTree);
 
-  const { fileContents } = useFileContentContext();
+  const fileContents = useAppSelector(selectFileContents);
 
-  const { tokenCount } = useTokenCountContext();
+  const tokenCount = useAppSelector(selectTokenCount);
 
   const [, copy] = useCopyToClipboard();
 
@@ -79,6 +79,9 @@ export default function Toolbar() {
   };
 
   const copyDirectoryTree = async () => {
+    if (!directoryTree) {
+      return;
+    }
     const estimated = TokenEstimator.estimateTokens(directoryTree);
 
     if (estimated <= copyLimit) {
@@ -93,10 +96,9 @@ export default function Toolbar() {
 
   return (
     <div className="fixed bottom-8 right-8">
-      <div className="flex flex-row justify-center gap-4 p-2 rounded-md bg-accent">
-        <button type="button" className="px-2 py-1">
-          {tokenCount} Tokens
-        </button>
+      <div className="flex flex-row justify-center gap-4 py-2 px-4 rounded-md bg-accent">
+        <p className="py-1">{fileContents.length} Files</p>
+        <p className="py-1">{tokenCount} Tokens</p>
         <div
           className="relative"
           onMouseEnter={() => {

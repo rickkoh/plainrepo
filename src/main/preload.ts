@@ -2,6 +2,8 @@
 /* eslint no-unused-vars: off */
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
 import { FileNode } from '../types/FileNode';
+import { AppSettings } from '../types/AppSettings';
+import { IPCChannel } from '../shared/ipcChannels';
 
 export type Channels =
   | 'ipc-example'
@@ -11,7 +13,8 @@ export type Channels =
   | 'stream:content'
   | 'stream:tokenCount'
   | 'stream:directoryTree'
-  | 'content:stream';
+  | 'content:stream'
+  | IPCChannel;
 
 const electronHandler = {
   ipcRenderer: {
@@ -35,7 +38,7 @@ const electronHandler = {
     },
     readAppSettings: () => ipcRenderer.invoke('appSettings:read'),
     updateAppSettings: (
-      settings: unknown,
+      settings: AppSettings,
     ): Promise<{ success: boolean; error?: string }> =>
       ipcRenderer.invoke('appSettings:update', settings),
     streamContent: (fileNode: FileNode) =>

@@ -3,21 +3,21 @@ import { PropsWithChildren } from 'react';
 import { selectDarkMode } from '../redux/selectors/appSelectors';
 import { useAppSelector } from '../redux/hooks';
 
-interface AppProviderProps {}
+interface ThemeProps {}
 
-export default function AppProvider({
-  children,
-}: PropsWithChildren<AppProviderProps>) {
+export default function MainTheme({ children }: PropsWithChildren<ThemeProps>) {
   const isDarkMode = useAppSelector(selectDarkMode);
 
   return (
-    <div
+    <main
       className={cn(
-        'w-full h-full bg-background text-foreground transition-all duration-200',
+        'relative w-full h-screen overflow-hidden',
+        'bg-background text-foreground',
+        'transition-all duration-200',
         isDarkMode && 'dark',
       )}
     >
       {children}
-    </div>
+    </main>
   );
 }

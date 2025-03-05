@@ -1,7 +1,7 @@
-// File: src/renderer/redux/store.ts
 import { configureStore } from '@reduxjs/toolkit';
 import { persistStore, persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
+
 import { rootReducer } from './rootReducer';
 import electronMiddleware from './electronMiddleware';
 
@@ -10,7 +10,7 @@ const persistConfig = {
   storage,
   // Only persist UI state, settings, and tab configuration
   // Don't persist large file content data
-  whitelist: ['app', 'tabs'],
+  whitelist: ['app'], // I.e. ['app', 'workspace', 'tabs'],
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
@@ -22,7 +22,8 @@ export const store = configureStore({
       serializableCheck: {
         // Ignore non-serializable data in certain paths
         ignoredActions: [
-          'workspace/setFileNode',
+          'persist/PERSIST',
+          'workspace/setWorkingFileNode',
           'fileContents/addFileContents',
         ],
         ignoredPaths: ['workspace.fileNode', 'fileContents.byId'],
@@ -32,5 +33,4 @@ export const store = configureStore({
 
 export const persistor = persistStore(store);
 
-export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;

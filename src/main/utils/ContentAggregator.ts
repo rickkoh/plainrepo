@@ -33,9 +33,13 @@ export function streamGetContent(
   const appSettings = readAppSettings();
   const replaceList = appSettings.replace || [];
 
+  let index = -1;
+
   chunk(fileNodeList, chunkOption?.size ?? 20).forEach((fileNodes) => {
     const fileContents = fileNodes.map((fileNode) => {
+      index += 1;
       return {
+        index,
         name: fileNode.name,
         path: fileNode.path,
         content: getContent(

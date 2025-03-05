@@ -1,50 +1,25 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { cn } from '@/lib/utils';
 import { BaseFileNode, FileNode } from '@/src/types/FileNode';
 import { Checkbox } from '@/components/ui/checkbox';
-import { CheckedState } from '@radix-ui/react-checkbox';
-import { useFileContext } from '../contexts/FileContext';
+import { File, Folder } from 'lucide-react';
+
+import { useAppDispatch, useAppSelector } from '../redux/hooks';
+import { selectFileNode } from '../redux/selectors/filesSelectors';
+import { toggleFileNodeSelection } from '../redux/slices/filesSlice';
 
 interface MatchedFileNode extends BaseFileNode {
   indexPath: number[];
 }
 
-// Helper function
-function updateFileNodeAtPath(
-  node: FileNode,
-  indexPath: number[],
-  checked: CheckedState,
-): FileNode {
-  if (indexPath.length === 0) {
-    return { ...node, selected: checked === 'indeterminate' ? false : checked };
-  }
-
-  const index = indexPath[0];
-  if (!node.children || index >= node.children.length) {
-    return node;
-  }
-
-  const newChildren = [...node.children];
-
-  newChildren[index] = updateFileNodeAtPath(
-    newChildren[index],
-    indexPath.slice(1),
-    checked,
-  );
-
-  const anyChildSelected = newChildren.some((child) => child.selected);
-
-  return {
-    ...node,
-    children: newChildren,
-    selected: anyChildSelected,
-  };
-}
-
 export default function Search() {
-  const { fileNode, setFileNode } = useFileContext();
+  const dispatch = useAppDispatch();
+  const fileNode = useAppSelector(selectFileNode);
 
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectAll, setSelectAll] = useState<CheckedState>(false);
+
+  const [showFiles, setShowFiles] = useState<boolean>(true);
+  const [showFolders, setShowFolders] = useState<boolean>(true);
 
   const filteredNodes = useMemo(() => {
     if (!searchQuery || searchQuery.trim() === '' || !fileNode) {
@@ -60,8 +35,9 @@ export default function Search() {
       node.children.forEach((child, i) => {
         const childPath = [...indexPath, i];
         if (
-          child.type !== 'directory' &&
-          child.name.toLowerCase().includes(searchQuery.toLowerCase()) // Search case-insensitive
+          child.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+          ((child.type === 'directory' && showFolders) ||
+            (child.type === 'file' && showFiles))
         ) {
           const matchedNode: MatchedFileNode = {
             ...child,
@@ -75,22 +51,7 @@ export default function Search() {
 
     buildMatchingNodes(fileNode, []);
     return matchingNodes;
-  }, [fileNode, searchQuery]);
-
-  const handleCheckboxChange = useCallback(
-    (checked: CheckedState, matchedFileNode: MatchedFileNode) => {
-      if (!fileNode) {
-        return;
-      }
-      const updatedFileTree = updateFileNodeAtPath(
-        fileNode,
-        matchedFileNode.indexPath,
-        checked,
-      );
-      setFileNode(updatedFileTree);
-    },
-    [fileNode, setFileNode],
-  );
+  }, [fileNode, searchQuery, showFiles, showFolders]);
 
   return (
     <div className="flex flex-col w-full h-full py-4 space-y-2 overflow-y-scroll">
@@ -103,31 +64,57 @@ export default function Search() {
           onChange={(e) => setSearchQuery(e.target.value)}
         />
       </div>
+      <div className="flex flex-row items-center px-4 space-x-2">
+        <button
+          type="button"
+          className={cn(
+            'text-sm border-b border-muted-foreground text-muted-foreground',
+            showFiles && 'text-foreground border-foreground',
+          )}
+          onClick={() => setShowFiles(!showFiles)}
+        >
+          Files
+        </button>
+        <button
+          type="button"
+          className={cn(
+            'text-sm border-b border-muted-foreground text-muted-foreground',
+            showFolders && 'text-foreground border-foreground',
+          )}
+          onClick={() => setShowFolders(!showFolders)}
+        >
+          Folders
+        </button>
+      </div>
       <div>
         {filteredNodes && filteredNodes.length > 0 ? (
           <div className="flex flex-col space-y-2">
-            <div className="flex flex-row items-center px-4 space-x-2">
-              <button
-                type="button"
-                className="text-sm border-b border-foreground"
-                onClick={() => setSelectAll(selectAll)}
-              >
-                Select all
-              </button>
-            </div>
             {filteredNodes.map((matchedNode) => (
               <div
                 key={matchedNode.path}
-                className="flex flex-row items-center px-4 space-x-2 hover:bg-accent"
+                className="flex flex-row items-center px-4 space-x-2 hover:bg-accent whitespace-nowrap flex-nowrap"
               >
                 <Checkbox
                   id={matchedNode.path}
                   checked={matchedNode.selected}
-                  onCheckedChange={(checked) =>
-                    handleCheckboxChange(checked, matchedNode)
-                  }
+                  onCheckedChange={(checked) => {
+                    dispatch(
+                      toggleFileNodeSelection({
+                        path: matchedNode.path,
+                        selected: checked === true,
+                      }),
+                    );
+                  }}
                 />
                 <label htmlFor={matchedNode.path}>{matchedNode.name}</label>
+                {matchedNode.type === 'directory' ? (
+                  <Folder
+                    size={16}
+                    className="shrink-0 text-muted-foreground"
+                  />
+                ) : (
+                  <File size={16} className="shrink-0 text-muted-foreground" />
+                )}
                 <p className="text-sm text-muted-foreground">
                   {matchedNode.path}
                 </p>

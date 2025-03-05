@@ -24,6 +24,7 @@ import { FileNodeSchema } from '../types/FileNode';
 import { readAppSettings, writeAppSettings } from './utils/AppSettings';
 import { FileContent } from '../types/FileContent';
 import TokenEstimator from './utils/TokenEstimator';
+import { ipcChannels } from '../shared/ipcChannels';
 
 class AppUpdater {
   constructor() {
@@ -59,6 +60,88 @@ ipcMain.on('dialog:openDirectory', async () => {
     mainWindow.webContents.send('workspace:fileNode', directoryTree);
   }
   return null;
+});
+
+ipcMain.handle('stream:content', async (event, arg) => {
+  if (!mainWindow) {
+    return null;
+  }
+
+  const parsedResult = FileNodeSchema.safeParse(arg);
+  if (!parsedResult.success) {
+    return null;
+  }
+
+  const fileNode = parsedResult.data;
+  const directoryTree = generateDirectoryStructure(fileNode);
+
+  // Send the directory tree structure directly
+  mainWindow.webContents.send(ipcChannels.DIRECTORY_TREE_SET, directoryTree);
+
+  // Send initial token count
+  let count = TokenEstimator.estimateTokens(directoryTree);
+  mainWindow.webContents.send(ipcChannels.TOKEN_COUNT_SET, count);
+
+  // Clear previous content before loading new content
+  mainWindow.webContents.send(ipcChannels.FILE_CONTENTS_CLEAR);
+
+  // Stream content in chunks
+  const flattenedFileNodes = flattenFileNode(fileNode);
+  streamGetContent(
+    flattenedFileNodes,
+    (fileContents: FileContent[]) => {
+      if (!mainWindow) {
+        return;
+      }
+
+      // Update token count with your preferred for loop style
+      for (let i = 0; i < fileContents.length; i += 1) {
+        const fileContent = fileContents[i];
+        count += TokenEstimator.estimateTokens(fileContent.content);
+      }
+
+      mainWindow.webContents.send(ipcChannels.TOKEN_COUNT_SET, count);
+
+      // Add new content
+      mainWindow.webContents.send(ipcChannels.FILE_CONTENTS_ADD, fileContents);
+    },
+    { size: 1000 },
+  );
+
+  return null;
+});
+
+ipcMain.handle('appSettings:read', async () => {
+  if (!mainWindow) {
+    return null;
+  }
+  return readAppSettings();
+});
+
+ipcMain.handle('appSettings:update', async (event, settings) => {
+  console.log('Updating app settings:', settings);
+  try {
+    // Write the settings to JSON (or however writeAppSettings is implemented)
+    await writeAppSettings(settings);
+    // Optionally, you could return some confirmation data
+    return { success: true };
+  } catch (error: any) {
+    console.error('Failed to update app settings:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('file:get-directory-structure', (event, arg) => {
+  if (!mainWindow) {
+    return null;
+  }
+  console.log('attempting to get-directory-structure');
+  const parsedResult = FileNodeSchema.safeParse(arg);
+  if (!parsedResult.success) {
+    return '';
+  }
+  const fileNode = parsedResult.data;
+  return generateDirectoryStructure(fileNode);
 });
 
 if (process.env.NODE_ENV === 'production') {
@@ -126,92 +209,6 @@ const createWindow = async () => {
 
   mainWindow.on('closed', () => {
     mainWindow = null;
-  });
-
-  ipcMain.handle('stream:content', async (event, arg) => {
-    if (!mainWindow) {
-      return null;
-    }
-    const parsedResult = FileNodeSchema.safeParse(arg);
-
-    if (!parsedResult.success) {
-      return null;
-    }
-
-    const directoryTree = generateDirectoryStructure(parsedResult.data);
-
-    mainWindow.webContents.send('stream:directoryTree', {
-      type: 'SET_DIRECTORY_TREE',
-      payload: directoryTree,
-    });
-
-    let count = TokenEstimator.estimateTokens(directoryTree);
-    mainWindow.webContents.send('stream:tokenCount', {
-      type: 'SET_TOKEN_COUNT',
-      payload: count,
-    });
-
-    const fileNode = parsedResult.data;
-    const flattenedFileNodes = flattenFileNode(fileNode);
-    mainWindow.webContents.send('stream:content', {
-      type: 'CLEAR_FILE_CONTENT',
-    });
-    streamGetContent(
-      flattenedFileNodes,
-      (fileContents: FileContent[]) => {
-        if (!mainWindow) {
-          return;
-        }
-        for (let i = 0; i < fileContents.length; i += 1) {
-          const fileContent = fileContents[i];
-          count += TokenEstimator.estimateTokens(fileContent.content);
-        }
-        mainWindow.webContents.send('stream:tokenCount', {
-          type: 'SET_TOKEN_COUNT',
-          payload: count,
-        });
-        mainWindow.webContents.send('stream:content', {
-          type: 'ADD_FILE_CONTENT',
-          payload: fileContents,
-        });
-      },
-      { size: 1000 },
-    );
-
-    return null;
-  });
-
-  ipcMain.handle('appSettings:read', async () => {
-    if (!mainWindow) {
-      return null;
-    }
-    return readAppSettings();
-  });
-
-  ipcMain.handle('appSettings:update', async (event, settings) => {
-    console.log('Updating app settings:', settings);
-    try {
-      // Write the settings to JSON (or however writeAppSettings is implemented)
-      await writeAppSettings(settings);
-      // Optionally, you could return some confirmation data
-      return { success: true };
-    } catch (error: any) {
-      console.error('Failed to update app settings:', error);
-      return { success: false, error: error.message };
-    }
-  });
-
-  ipcMain.handle('file:get-directory-structure', (event, arg) => {
-    if (!mainWindow) {
-      return null;
-    }
-    console.log('attempting to get-directory-structure');
-    const parsedResult = FileNodeSchema.safeParse(arg);
-    if (!parsedResult.success) {
-      return '';
-    }
-    const fileNode = parsedResult.data;
-    return generateDirectoryStructure(fileNode);
   });
 
   const menuBuilder = new MenuBuilder(mainWindow);
