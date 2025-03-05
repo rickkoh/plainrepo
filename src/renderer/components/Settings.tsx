@@ -6,8 +6,22 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ExcludeItem, ReplaceItem } from '@/src/types/AppSettings';
 import { Input } from '@/components/ui/input';
 
-import { useAppContext } from '../contexts/AppContext';
 import EditableListItem from './Forms/EditableListItem';
+import { useAppDispatch, useAppSelector } from '../redux/hooks';
+
+import {
+  selectCopyLimit,
+  selectExclude,
+  selectReplace,
+  selectShouldIncludeGitIgnore,
+} from '../redux/selectors/appSelectors';
+
+import {
+  setCopyLimit,
+  setExclude,
+  setReplace,
+  setShouldIncludeGitIgnore,
+} from '../redux/slices/appSlice';
 
 interface SettingsItemProps {}
 
@@ -44,16 +58,15 @@ function SettingsItemContent({
 }
 
 export default function Settings() {
-  const {
-    shouldIncludeGitIgnore,
-    setShouldIncludeGitIgnore,
-    exclude,
-    setExclude,
-    replace,
-    setReplace,
-    copyLimit,
-    setCopyLimit,
-  } = useAppContext();
+  const dispatch = useAppDispatch();
+
+  const exclude = useAppSelector(selectExclude);
+
+  const shouldIncludeGitIgnore = useAppSelector(selectShouldIncludeGitIgnore);
+
+  const replace = useAppSelector(selectReplace);
+
+  const copyLimit = useAppSelector(selectCopyLimit);
 
   const [newExcludeText, setNewExcludeText] = useState<ExcludeItem>('');
 
@@ -69,17 +82,17 @@ export default function Settings() {
   function handleRemoveExclude(index: number) {
     const setSet = [...exclude];
     setSet.splice(index, 1);
-    setExclude(setSet);
+    dispatch(setExclude(setSet));
   }
 
   function handleEditExclude(index: number, newText: string) {
     const setSet = [...exclude];
     setSet[index] = newText;
-    setExclude(setSet);
+    dispatch(setExclude(setSet));
   }
 
   function handleAddExclude() {
-    setExclude([...exclude, newExcludeText]);
+    dispatch(setExclude([...exclude, newExcludeText]));
     setNewExcludeText('');
   }
 
@@ -91,11 +104,11 @@ export default function Settings() {
   function handleRemoveReplace(index: number) {
     const setSet = [...replace];
     setSet.splice(index, 1);
-    setReplace(setSet);
+    dispatch(setReplace(setSet));
   }
 
   function handleAddReplace() {
-    setReplace([...replace, newReplace]);
+    dispatch(setReplace([...replace, newReplace]));
     setNewReplace({ from: '', to: '' });
   }
 
@@ -170,8 +183,10 @@ export default function Settings() {
             id="includeGitIgnore"
             checked={shouldIncludeGitIgnore}
             onCheckedChange={(checkedState) =>
-              setShouldIncludeGitIgnore(
-                checkedState === 'indeterminate' ? false : checkedState,
+              dispatch(
+                setShouldIncludeGitIgnore(
+                  checkedState === 'indeterminate' ? false : checkedState,
+                ),
               )
             }
           />
@@ -278,7 +293,7 @@ export default function Settings() {
           <Input
             type="number"
             value={copyLimit}
-            onChange={(e) => setCopyLimit(Number(e.target.value))}
+            onChange={(e) => dispatch(setCopyLimit(Number(e.target.value)))}
           />
         </SettingsItem>
       </div>

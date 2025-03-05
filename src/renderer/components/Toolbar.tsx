@@ -15,10 +15,11 @@ import TokenEstimator from '@/src/main/utils/TokenEstimator';
 import { useTokenCountContext } from '../contexts/TokenCountContext';
 import { useDirectoryTreeContext } from '../contexts/DirectoryTreeContext';
 import { useFileContentContext } from '../contexts/FileContentContext';
-import { useAppContext } from '../contexts/AppContext';
+import { useAppSelector } from '../redux/hooks';
+import { selectCopyLimit } from '../redux/selectors/appSelectors';
 
 export default function Toolbar() {
-  const { copyLimit } = useAppContext();
+  const copyLimit = useAppSelector(selectCopyLimit);
 
   const { directoryTree } = useDirectoryTreeContext();
 
@@ -48,8 +49,6 @@ export default function Toolbar() {
     }
 
     const estimated = TokenEstimator.estimateTokens(content);
-
-    console.log(estimated);
 
     if (estimated <= copyLimit) {
       copy(content);

@@ -12,7 +12,9 @@ import { useState } from 'react';
 import Search from './Search';
 import Explorer from './Explorer';
 import Settings from './Settings';
-import { useAppContext } from '../contexts/AppContext';
+import { useAppDispatch, useAppSelector } from '../redux/hooks';
+import { selectDarkMode } from '../redux/selectors/appSelectors';
+import { toggleDarkMode } from '../redux/slices/appSlice';
 
 enum Tab {
   ExplorerTab = 'explorer',
@@ -21,7 +23,10 @@ enum Tab {
 }
 
 export default function Sidebar() {
-  const { isDarkMode, toggleDarkMode } = useAppContext();
+  const isDarkMode = useAppSelector(selectDarkMode);
+
+  const dispatch = useAppDispatch();
+
   const [activeTab, setActiveTab] = useState(Tab.ExplorerTab);
 
   return (
@@ -55,7 +60,9 @@ export default function Sidebar() {
         </button>
         <button
           type="button"
-          onClick={() => toggleDarkMode()}
+          onClick={() => {
+            dispatch(toggleDarkMode());
+          }}
           className={cn(
             'border-l-2 border-background py-4 px-2 text-muted-foreground mt-auto',
             'hover:text-foreground',

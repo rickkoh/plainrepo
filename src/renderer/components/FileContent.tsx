@@ -3,12 +3,18 @@ import { VariableSizeList as List } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { useFileContentContext } from '../contexts/FileContentContext';
 import { useDirectoryTreeContext } from '../contexts/DirectoryTreeContext';
+import { useAppDispatch, useAppSelector } from '../redux/hooks';
+import { selectCopyLimit } from '../redux/selectors/appSelectors';
+import { setCopyLimit } from '../redux/slices/appSlice';
 
 const LINE_HEIGHT = 24;
 const HEADER_FOOTER = 48;
 const GAP = 24;
 
 export default function FileContent() {
+  const copyLimit = useAppSelector(selectCopyLimit);
+  const dispatch = useAppDispatch();
+
   const { directoryTree } = useDirectoryTreeContext();
   const { fileContents } = useFileContentContext();
   const listRef = useRef<List>(null);
@@ -56,6 +62,19 @@ export default function FileContent() {
 
     return (
       <div style={style} className="px-4">
+        <div className="fixed top-10 right-10 bg-red-200">
+          <button
+            type="button"
+            onClick={() => {
+              console.log('hello world');
+              dispatch(setCopyLimit(copyLimit + 1));
+            }}
+          >
+            Test
+          </button>
+          <p>Hello world</p>
+          <p>{copyLimit}</p>
+        </div>
         <pre
           className="whitespace-pre font-mono text-base"
           style={{
