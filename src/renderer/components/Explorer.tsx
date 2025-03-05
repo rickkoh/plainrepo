@@ -77,7 +77,11 @@ function TreeNode({
 }
 
 function Tree({ fileNode }: { fileNode: FileNode }) {
-  return <TreeNode fileNode={fileNode} isRoot />;
+  return (
+    <div className=" w-full h-full py-4 overflow-x-scroll bg-background ">
+      <TreeNode fileNode={fileNode} isRoot />;
+    </div>
+  );
 }
 
 export default function Explorer() {
