@@ -49,19 +49,19 @@ Version 1.0.0-rc:
     ✔ File (open) @done(25-03-03 01:17)
   ✔ Change directory in app @done(25-03-03 01:17)
     ✔ Optimise performance when changing directory @done(25-03-03 01:17)
-  ☐ Decide on how to handle context
+  ✔ Decide on how to handle context @done(25-03-07 02:18)
   ✔ Display directory tree @done(25-03-03 15:57)
-  ☐ Perhaps move copy to backend
-  ☐ Copy limit
-  ☐ Stats
+  ✔ Perhaps move copy to backend @done(25-03-07 02:18)
+  ✔ Copy limit @done(25-03-07 02:18)
+  ✔ Stats @done(25-03-07 02:18)
     ✔ Token count @done(25-03-03 01:18)
-    ☐ Total number of file
-    ☐ File/Content size
+    ✔ Total number of file @done(25-03-07 02:18)
+    ✔ File/Content size @done(25-03-07 02:18)
+  ✔ Optimise file node performance @done(25-03-07 02:18)
+  ✔ Decide and fix autosync @done(25-03-07 02:18)
+  ✘ Tabs feature @cancelled(25-03-07 02:18)
   ☐ Write test
   ☐ Write release notes
-  ☐ Optimise file node performance
-  ☐ Decide and fix autosync
-  ☐ Tabs feature
 
 Features:
   ✘ Autosync state, Autosync on, off, syncing @cancelled(25-02-28 02:22)
