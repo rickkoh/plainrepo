@@ -12,13 +12,16 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import TokenEstimator from '@/src/main/utils/TokenEstimator';
 
-import { useAppSelector } from '../redux/hooks';
+import { useAppDispatch, useAppSelector } from '../redux/hooks';
 import { selectCopyLimit } from '../redux/selectors/appSelectors';
 import { selectFileContents } from '../redux/selectors/fileContentsSelectors';
 import { selectDirectoryTree } from '../redux/selectors/filesSelectors';
 import { selectTokenCount } from '../redux/selectors/statsSelectors';
+import { resetSelection } from '../redux/slices/filesSlice';
 
 export default function Toolbar() {
+  const dispatch = useAppDispatch();
+
   const copyLimit = useAppSelector(selectCopyLimit);
 
   const directoryTree = useAppSelector(selectDirectoryTree);
@@ -96,9 +99,26 @@ export default function Toolbar() {
 
   return (
     <div className="fixed bottom-8 right-8">
-      <div className="flex flex-row justify-center gap-4 py-2 px-4 rounded-md bg-accent">
-        <p className="py-1">{fileContents.length} Files</p>
-        <p className="py-1">{tokenCount} Tokens</p>
+      <div className="flex flex-row justify-center gap-2 p-2 rounded-md bg-muted shadow-md">
+        <Button variant="ghost" type="button" className="flex px-2 py-1">
+          {fileContents.length} Files
+        </Button>
+        <Button variant="ghost" type="button" className="flex px-2 py-1">
+          {tokenCount} Tokens
+        </Button>
+        <Button
+          variant="ghost"
+          type="button"
+          className={cn(
+            'flex px-2 py-1',
+            'hover:bg-destructive hover:text-background',
+          )}
+          onClick={() => {
+            dispatch(resetSelection());
+          }}
+        >
+          Reset
+        </Button>
         <div
           className="relative"
           onMouseEnter={() => {
@@ -113,7 +133,7 @@ export default function Toolbar() {
           <Button
             variant="default"
             type="button"
-            className="flex px-2 py-1"
+            className="flex px-2 py-1 ml-2"
             onClick={() => {
               copyEverything();
             }}

@@ -6,7 +6,7 @@
   :root {
     --background: 42 30% 93%;
     --foreground: 46 63% 7%;
-    --muted: 42 30% 91%;
+    --muted: 42 30% 89%;
     --muted-foreground: 42 33% 42%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 47.4% 11.2%;
@@ -27,26 +27,26 @@
   }
 
   .dark {
-    --background: 42 30% 10%;
-    --foreground: 46 63% 90%;
-    --muted: 42 30% 15%;
-    --muted-foreground: 42 33% 75%;
-    --popover: 0 0% 12%;
-    --popover-foreground: 222.2 47.4% 90%;
-    --card: 0 0% 12%;
-    --card-foreground: 46 63% 90%;
-    --border: 42 30% 20%;
-    --input: 42 30% 20%;
-    --primary: 120 47.4% 30%;
-    --primary-foreground: 120 47.7% 92%;
-    --secondary: 120 40% 25%;
-    --secondary-foreground: 120 47.4% 90%;
-    --accent: 42 30% 35%;
-    --accent-foreground: 222.2 47.4% 90%;
-    --destructive: 2 72% 40%;
-    --destructive-foreground: 210 40% 98%;
-    --ring: 7.2 30% 30%;
-    --radius: 0.5rem;
+    --background: 0 0% 0%; /* Pure black background */
+    --foreground: 43 73% 84%; /* Main text color #f2e5bc */
+    --muted: 0 0% 13%; /* Dark gray #222222 - improved from bluish */
+    --muted-foreground: 43 73% 75%; /* Slightly dimmer text */
+    --popover: 0 0% 0%; /* Popover background (black) */
+    --popover-foreground: 43 73% 84%; /* Popover text */
+    --card: 0 0% 0%; /* Card background (black) */
+    --card-foreground: 43 73% 84%; /* Card text */
+    --border: 236 16% 18%; /* Border color #272836 */
+    --input: 236 16% 18%; /* Input borders #272836 */
+    --primary: 40 73% 49%; /* Primary button #d79921 */
+    --primary-foreground: 44 87% 91%; /* Button text #f9f5d7 */
+    --secondary: 111 40% 59%; /* Secondary green #7ec16e */
+    --secondary-foreground: 43 73% 90%; /* Text on secondary elements */
+    --accent: 42 95% 18%; /* Accent changed to yellow #fabd2f */
+    --accent-foreground: 0 0% 84%; /* Black text on yellow accent for contrast */
+    --destructive: 354 90% 56%; /* Destructive red #f42c3e */
+    --destructive-foreground: 44 87% 91%; /* Text on destructive elements */
+    --ring: 220 39% 40%; /* Focus ring color #3e588c */
+    --radius: 0.5rem; /* Border radius unchanged */
   }
 }
 
