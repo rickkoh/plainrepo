@@ -90,7 +90,7 @@ export default class MenuBuilder {
       submenu: [
         {
           label: 'Open',
-          accelerator: 'Command+P',
+          accelerator: 'Command+O',
           click: () => {
             ipcMain.emit('dialog:openDirectory');
           },

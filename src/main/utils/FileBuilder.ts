@@ -52,8 +52,10 @@ export function buildFileNode(rootDir: string): FileNode {
       });
   }
 
+  const baseName = path.basename(rootDir);
+
   return {
-    name: rootDir,
+    name: baseName.toUpperCase(),
     path: rootDir,
     type: 'directory',
     children: build(rootDir),
@@ -149,44 +151,15 @@ export function buildFileNodeContent(rootDir: string): FileNode {
       });
   }
 
+  const baseName = path.basename(rootDir);
+
   return {
-    name: rootDir,
+    name: baseName.toUpperCase(),
     path: rootDir,
     type: 'directory',
     children: readDir(rootDir),
     selected: true,
   };
-}
-
-/**
- * Discover the content from the file node
- *
- * @param node The file node to discover the content from
- * @returns The file node with content
- */
-export function discoverFileNodeContent(node: FileNode): FileNode {
-  const appSettings = readAppSettings();
-  const replaceList = appSettings.replace || [];
-
-  const syncDate = new Date();
-
-  function discover(fileNode: FileNode): FileNode {
-    if (fileNode.type === 'file' && fileNode.selected) {
-      const rawContent = fs.readFileSync(fileNode.path, 'utf-8');
-      return {
-        ...fileNode,
-        content: applyReplacements(rawContent, replaceList),
-        lastSynced: syncDate,
-      };
-    }
-
-    return {
-      ...fileNode,
-      children: fileNode.children?.map((child) => discover(child)),
-    };
-  }
-
-  return discover(node);
 }
 
 /**

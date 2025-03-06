@@ -49,16 +49,18 @@ ipcMain.on('dialog:openDirectory', async () => {
   const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
     properties: ['openDirectory'],
   });
-  if (!canceled) {
-    mainWindow.webContents.send('workspace:path', filePaths[0]);
-
-    const start = Date.now();
-    const directoryTree = buildFileNode(filePaths[0]);
-    const timeTaken = Date.now() - start;
-
-    console.log('Time taken:', timeTaken);
-    mainWindow.webContents.send('workspace:fileNode', directoryTree);
+  if (canceled) {
+    return null;
   }
+  mainWindow.webContents.send('workspace:path', filePaths[0]);
+
+  const start = Date.now();
+  const directoryTree = buildFileNode(filePaths[0]);
+  const timeTaken = Date.now() - start;
+
+  console.log('Time taken:', timeTaken);
+  mainWindow.webContents.send('workspace:fileNode', directoryTree);
+
   return null;
 });
 
