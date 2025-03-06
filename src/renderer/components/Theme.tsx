@@ -13,7 +13,7 @@ export default function MainTheme({ children }: PropsWithChildren<ThemeProps>) {
       className={cn(
         'relative w-full h-screen overflow-hidden',
         'bg-background text-foreground',
-        'transition-all duration-200',
+        'transition-all duration-0',
         isDarkMode && 'dark',
       )}
     >

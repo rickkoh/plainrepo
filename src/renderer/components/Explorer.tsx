@@ -30,7 +30,7 @@ function TreeNode({
   return (
     <div key={fileNode.path} className="flex flex-col">
       <div
-        className="flex flex-row items-center space-x-2 hover:bg-accent"
+        className="flex flex-row items-center space-x-2 hover:bg-accent whitespace-nowrap"
         style={{ paddingLeft: `${level * 16}px` }}
       >
         <button
@@ -79,7 +79,7 @@ function TreeNode({
 function Tree({ fileNode }: { fileNode: FileNode }) {
   return (
     <div className=" w-full h-full py-4 overflow-x-scroll bg-background ">
-      <TreeNode fileNode={fileNode} isRoot />;
+      <TreeNode fileNode={fileNode} isRoot />
     </div>
   );
 }
