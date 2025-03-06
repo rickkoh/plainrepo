@@ -50,6 +50,15 @@ const electronMiddleware: Middleware<{}, RootState, Dispatch<UnknownAction>> =
         break;
       }
 
+      case 'files/resetSelection': {
+        if (store.getState().files.fileNode) {
+          window.electron.ipcRenderer.streamContent(
+            store.getState().files.fileNode!,
+          );
+        }
+        break;
+      }
+
       default: {
         break;
       }

@@ -69,14 +69,29 @@ const fileSlice = createSlice({
 
       findAndToggle(state.fileNode);
     },
+    resetSelection(state) {
+      if (!state.fileNode) {
+        return;
+      }
+
+      const payload = { path: state.fileNode.path, selected: false };
+      fileSlice.caseReducers.toggleFileNodeSelection(state, {
+        type: 'files/toggleFileNodeSelection',
+        payload,
+      });
+    },
     setDirectoryTree(state, action: PayloadAction<string>) {
       state.directoryTree = action.payload;
     },
   },
 });
 
-export const { setFileNode, toggleFileNodeSelection, setDirectoryTree } =
-  fileSlice.actions;
+export const {
+  setFileNode,
+  toggleFileNodeSelection,
+  resetSelection,
+  setDirectoryTree,
+} = fileSlice.actions;
 
 const filesReducer = fileSlice.reducer;
 
