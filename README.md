@@ -1,13 +1,13 @@
 <p align="center">
-  <img src="assets/icon.png" alt="Plainrepo Logo" width="150"/>
+  <img src="assets/icon.png" alt="PlainRepo Logo" width="150"/>
 </p>
 
-# Plainrepo
+# PlainRepo
 
-Plainrepo is a desktop application that helps developers **select**, **view**, and **copy** the plain-text contents of any subset of files in a repository. It’s perfect for feeding **precise context** to large language models (LLMs), debugging, refactoring, and general code analysis.
+PlainRepo is a desktop application that helps developers **select**, **view**, and **copy** the plain-text contents of any subset of files in a repository. It’s perfect for feeding **precise context** to large language models (LLMs), debugging, refactoring, and general code analysis.
 
 <p align="center">
-  <img src="assets/appscreenshot.png" alt="Plainrepo Logo"/>
+  <img src="assets/appscreenshot.png" alt="PlainRepo Logo"/>
 </p>
 
 ## Features
@@ -50,7 +50,7 @@ Plainrepo is a desktop application that helps developers **select**, **view**, a
 
 ## Contributing
 
-We welcome contributions to Plainrepo! Please see our [Code of Conduct](./CODE_OF_CONDUCT.md) for guidelines on how to participate respectfully in our community.
+We welcome contributions to PlainRepo! Please see our [Code of Conduct](./CODE_OF_CONDUCT.md) for guidelines on how to participate respectfully in our community.
 
 ## Maintainers
 

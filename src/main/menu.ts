@@ -55,17 +55,17 @@ export default class MenuBuilder {
 
   buildDarwinTemplate(): MenuItemConstructorOptions[] {
     const subMenuAbout: DarwinMenuItemConstructorOptions = {
-      label: 'Plainrepo',
+      label: 'PlainRepo',
       submenu: [
         {
-          label: 'About Plainrepo',
+          label: 'About PlainRepo',
           selector: 'orderFrontStandardAboutPanel:',
         },
         { type: 'separator' },
         { label: 'Services', submenu: [] },
         { type: 'separator' },
         {
-          label: 'Hide Plainrepo',
+          label: 'Hide PlainRepo',
           accelerator: 'Command+H',
           selector: 'hide:',
         },
