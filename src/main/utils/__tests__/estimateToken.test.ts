@@ -10,13 +10,11 @@ describe('estimateToken', () => {
         name: 'file1.txt',
         path: 'file1.txt',
         type: 'file',
-        content: 'Hello world 1',
       },
       {
         name: 'file2.txt',
         path: 'file1.txt',
         type: 'file',
-        content: 'Hello world 2',
       },
     );
   });

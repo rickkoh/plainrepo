@@ -4,7 +4,6 @@ export const BaseFileNodeSchema = z.object({
   name: z.string(),
   path: z.string(),
   type: z.enum(['file', 'directory']),
-  content: z.string().optional(),
   lastSynced: z.coerce.date().optional(),
   selected: z.boolean().optional(),
 });
@@ -21,7 +20,6 @@ export type FileNode = {
   path: string;
   type: 'file' | 'directory';
   selected?: boolean;
-  content?: string;
   lastSynced?: Date;
   children?: FileNode[];
 };
