@@ -16,8 +16,8 @@ PlainRepo is a desktop application that helps developers **select**, **view**, a
 - **Plain Text Export** – Generate a single text file with all selected code.
 - **Search & Filter** – Quickly find relevant files, text, or patterns.
 - **Replace Sensitive Info** – Easily sanitize code before sharing.
-- **Multiple Tabs** – Keep different sets of files or contexts organized.
 - **One-Click Copy** – Send your curated code context to any AI tool.
+- **Optimised Performance** – Handle reading thousands of files.
 
 ## Getting Started
 
