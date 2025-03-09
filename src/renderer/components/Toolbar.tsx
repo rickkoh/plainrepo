@@ -1,16 +1,10 @@
-/**
- * Show directory structure
- * Show number of tokens
- * Copy button
- * @returns Toolbar
- */
-
 import { betterNumberFormat, cn } from '@/lib/utils';
 import { useCopyToClipboard, useDebounceCallback } from 'usehooks-ts';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import TokenEstimator from '@/src/main/utils/TokenEstimator';
+import { CopyLimitSchema } from '@/src/types/AppSettings';
 
 import { useAppDispatch, useAppSelector } from '../redux/hooks';
 import { selectCopyLimit } from '../redux/selectors/appSelectors';
@@ -53,7 +47,9 @@ export default function Toolbar() {
 
     const estimated = TokenEstimator.estimateTokens(content);
 
-    if (estimated <= copyLimit!) {
+    const parsedCopyLimit = CopyLimitSchema.parse(copyLimit);
+
+    if (estimated <= parsedCopyLimit) {
       copy(content);
       toast('Copied everything');
     } else {
@@ -71,7 +67,9 @@ export default function Toolbar() {
 
     const estimated = TokenEstimator.estimateTokens(content);
 
-    if (estimated <= copyLimit!) {
+    const parsedCopyLimit = CopyLimitSchema.parse(copyLimit);
+
+    if (estimated <= parsedCopyLimit) {
       copy(content);
       toast('Copied contents only');
     } else {
@@ -87,7 +85,9 @@ export default function Toolbar() {
     }
     const estimated = TokenEstimator.estimateTokens(directoryTree);
 
-    if (estimated <= copyLimit!) {
+    const parsedCopyLimit = CopyLimitSchema.parse(copyLimit);
+
+    if (estimated <= parsedCopyLimit) {
       copy(directoryTree);
       toast('Copied directory tree');
     } else {
