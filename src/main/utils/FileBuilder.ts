@@ -1,4 +1,12 @@
 import { Dirent } from 'node:fs';
+import {
+  ExcludeListSchema,
+  MaxFileSizeSchema,
+  ReplaceListSchema,
+  ShouldIncludeGitIgnoreSchema,
+} from '@/src/types/AppSettings';
+import { mbToBytes } from '@/lib/utils';
+
 import { FileNode, FileNodes } from '../../types/FileNode';
 import { readAppSettings } from './AppSettings';
 import { applyReplacements } from './Replacer';
@@ -15,9 +23,12 @@ const path = require('path');
  */
 export function buildFileNode(rootDir: string): FileNode {
   const appSettings = readAppSettings();
-  const excludePatterns = appSettings.exclude || [];
+  const excludePatterns = ExcludeListSchema.parse(appSettings.exclude);
+  const shouldIncludeGitIgnore = ShouldIncludeGitIgnoreSchema.parse(
+    appSettings.shouldIncludeGitIgnore,
+  );
 
-  if (appSettings.shouldIncludeGitIgnore) {
+  if (shouldIncludeGitIgnore) {
     excludePatterns.push(...getGitIgnorePatterns(rootDir));
   }
 
@@ -67,36 +78,40 @@ export function buildFileNode(rootDir: string): FileNode {
  * Generate the directory structure from the file node
  *
  * @param node The file node to generate the directory structure from
- * @param indent The indentation to use
  * @returns The directory structure as a string
  */
-export function generateDirectoryStructure(
-  node: FileNode,
-  indent: string = '',
-): string {
+export function generateDirectoryStructure(node: FileNode): string {
+  // Read app settings once at the top level
   const appSettings = readAppSettings();
   const replaceList = appSettings.replace || [];
 
-  let result = indent === '' ? '.\n' : '';
-
-  if (node.children && node.children.length > 0) {
-    for (let i = 0; i < node.children.length; i += 1) {
-      const child = node.children[i];
-      const isLastChild = i === node.children.length - 1;
-      const prefix = isLastChild ? '└── ' : '├── ';
-      if (child.selected) {
-        result += `${indent}${prefix}${applyReplacements(child.name, replaceList)}\n`;
-      }
-      if (child.type === 'directory') {
-        result += generateDirectoryStructure(
-          child,
-          indent + (isLastChild ? '    ' : '│   '),
-        );
+  /**
+   * Recursively traverses the directory structure
+   *
+   * @param currentNode The current file node to process
+   * @param indent The indentation to use
+   * @returns The directory structure as a string
+   */
+  function traverse(currentNode: FileNode, indent: string = ''): string {
+    let result = indent === '' ? '.\n' : '';
+    if (currentNode.children && currentNode.children.length > 0) {
+      for (let i = 0; i < currentNode.children.length; i += 1) {
+        const child = currentNode.children[i];
+        const isLastChild = i === currentNode.children.length - 1;
+        const prefix = isLastChild ? '└── ' : '├── ';
+        if (child.selected) {
+          result += `${indent}${prefix}${applyReplacements(child.name, replaceList)}\n`;
+        }
+        if (child.type === 'directory') {
+          result += traverse(child, indent + (isLastChild ? '    ' : '│   '));
+        }
       }
     }
+    return result;
   }
 
-  return result;
+  // Start the traversal
+  return traverse(node);
 }
 
 /**
@@ -107,10 +122,16 @@ export function generateDirectoryStructure(
  */
 export function buildFileNodeContent(rootDir: string): FileNode {
   const appSettings = readAppSettings();
-  const excludePatterns = appSettings.exclude || [];
-  const replaceList = appSettings.replace || [];
+  const excludePatterns = ExcludeListSchema.parse(appSettings.exclude);
+  const replaceList = ReplaceListSchema.parse(appSettings.replace);
+  const maxFileSize = mbToBytes(
+    MaxFileSizeSchema.parse(appSettings.maxFileSize),
+  );
+  const shouldIncludeGitIgnore = ShouldIncludeGitIgnoreSchema.parse(
+    appSettings.shouldIncludeGitIgnore,
+  );
 
-  if (appSettings.shouldIncludeGitIgnore) {
+  if (shouldIncludeGitIgnore) {
     excludePatterns.push(...getGitIgnorePatterns(rootDir));
   }
 
@@ -133,6 +154,17 @@ export function buildFileNodeContent(rootDir: string): FileNode {
             type: 'directory',
             children: readDir(fullPath),
             selected: true,
+          };
+        }
+
+        const stats = fs.statSync(fullPath);
+        if (stats.size > maxFileSize) {
+          return {
+            name: entry.name,
+            path: fullPath,
+            type: 'file',
+            selected: true,
+            content: `File is too large to display (${stats.size} bytes)`,
           };
         }
 

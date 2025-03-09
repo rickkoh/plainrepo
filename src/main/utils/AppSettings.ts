@@ -14,7 +14,9 @@ export function readAppSettings(): AppSettings {
     return parsedData;
   } catch (error) {
     console.error('Failed to read app settings', error);
-    return {};
+    return AppSettingsSchema.parse({
+      shouldIncludeGitIgnore: true,
+    });
   }
 }
 

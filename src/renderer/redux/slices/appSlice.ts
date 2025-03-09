@@ -1,26 +1,23 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+
 import {
   AppSettings,
+  ChunkSize,
+  CopyLimit,
+  ExcludeItem,
   ExcludeList,
+  MaxFileSize,
+  ReplaceItem,
   ReplaceList,
+  ShouldIncludeGitIgnore,
 } from '../../../types/AppSettings';
 
-interface AppState {
-  darkMode: boolean;
-  shouldIncludeGitIgnore: boolean;
-  copyLimit: number;
-  exclude: ExcludeList;
-  replace: ReplaceList;
+interface AppState extends AppSettings {
   loading: boolean;
   error: string | null;
 }
 
 const initialState: AppState = {
-  darkMode: false,
-  shouldIncludeGitIgnore: true,
-  copyLimit: 500000,
-  exclude: [],
-  replace: [],
   loading: false,
   error: null,
 };
@@ -32,57 +29,77 @@ const appSlice = createSlice({
     toggleDarkMode(state) {
       state.darkMode = !state.darkMode;
     },
-    setShouldIncludeGitIgnore(state, action: PayloadAction<boolean>) {
+    setShouldIncludeGitIgnore(
+      state,
+      action: PayloadAction<ShouldIncludeGitIgnore>,
+    ) {
       state.shouldIncludeGitIgnore = action.payload;
     },
-    setCopyLimit(state, action: PayloadAction<number>) {
+    setCopyLimit(state, action: PayloadAction<CopyLimit>) {
+      if (action.payload < 1) {
+        state.copyLimit = undefined;
+        return;
+      }
       state.copyLimit = action.payload;
     },
     setExclude(state, action: PayloadAction<ExcludeList>) {
       state.exclude = action.payload;
     },
-    addExclude(state, action: PayloadAction<string>) {
+    addExclude(state, action: PayloadAction<ExcludeItem>) {
+      if (state.exclude === undefined) {
+        state.exclude = [];
+      }
       state.exclude.push(action.payload);
     },
     removeExclude(state, action: PayloadAction<number>) {
+      if (state.exclude === undefined) {
+        state.exclude = [];
+      }
       state.exclude.splice(action.payload, 1);
     },
     updateExclude(
       state,
       action: PayloadAction<{ index: number; value: string }>,
     ) {
+      if (state.exclude === undefined) {
+        state.exclude = [];
+      }
       state.exclude[action.payload.index] = action.payload.value;
     },
     setReplace(state, action: PayloadAction<ReplaceList>) {
       state.replace = action.payload;
     },
-    addReplace(state, action: PayloadAction<{ from: string; to: string }>) {
+    addReplace(state, action: PayloadAction<ReplaceItem>) {
+      if (state.replace === undefined) {
+        state.replace = [];
+      }
       state.replace.push(action.payload);
     },
     removeReplace(state, action: PayloadAction<number>) {
+      if (state.replace === undefined) {
+        state.replace = [];
+      }
       state.replace.splice(action.payload, 1);
-    },
-    triggerUpdateSettings(state) {
-      return { ...state };
     },
     updateSettings(state, action: PayloadAction<AppSettings>) {
       return { ...state, ...action.payload };
     },
-    loadSettingsStart(state) {
-      state.loading = true;
-      state.error = null;
+    setChunkSize(state, action: PayloadAction<ChunkSize>) {
+      if (action.payload < 1) {
+        state.chunkSize = undefined;
+        return;
+      }
+      state.chunkSize = action.payload;
     },
-    loadSettingsSuccess(state, action: PayloadAction<AppSettings>) {
-      return {
-        ...state,
-        ...action.payload,
-        loading: false,
-        error: null,
-      };
+    setMaxFileSize(state, action: PayloadAction<MaxFileSize>) {
+      if (action.payload < 1) {
+        state.maxFileSize = undefined;
+        return;
+      }
+      state.maxFileSize = action.payload;
     },
-    loadSettingsFailure(state, action: PayloadAction<string>) {
-      state.loading = false;
-      state.error = action.payload;
+    intialiseAppSettings(state, action: PayloadAction<AppSettings>) {
+      return { ...state, ...action.payload };
     },
   },
 });
@@ -99,9 +116,9 @@ export const {
   addReplace,
   removeReplace,
   updateSettings,
-  loadSettingsStart,
-  loadSettingsSuccess,
-  loadSettingsFailure,
+  setChunkSize,
+  setMaxFileSize,
+  intialiseAppSettings,
 } = appSlice.actions;
 
 const appReducer = appSlice.reducer;
@@ -110,15 +127,11 @@ export default appReducer;
 
 // Thunk to load app settings
 export const loadAppSettings = () => async (dispatch: any) => {
-  dispatch(loadSettingsStart());
   try {
     const settings = await window.electron.ipcRenderer.readAppSettings();
-    dispatch(loadSettingsSuccess(settings));
+    dispatch(intialiseAppSettings(settings));
   } catch (error) {
-    dispatch(
-      loadSettingsFailure(
-        error instanceof Error ? error.message : 'Unknown error',
-      ),
-    );
+    // eslint-disable-next-line no-console
+    console.log('Error loading app settings:', error);
   }
 };

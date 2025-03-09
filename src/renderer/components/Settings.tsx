@@ -10,15 +10,19 @@ import EditableListItem from './Forms/EditableListItem';
 import { useAppDispatch, useAppSelector } from '../redux/hooks';
 
 import {
+  selectChunkSize,
   selectCopyLimit,
   selectExclude,
+  selectMaxFileSize,
   selectReplace,
   selectShouldIncludeGitIgnore,
 } from '../redux/selectors/appSelectors';
 
 import {
+  setChunkSize,
   setCopyLimit,
   setExclude,
+  setMaxFileSize,
   setReplace,
   setShouldIncludeGitIgnore,
 } from '../redux/slices/appSlice';
@@ -54,7 +58,7 @@ interface SettingsItemContentProps {}
 function SettingsItemContent({
   children,
 }: PropsWithChildren<SettingsItemContentProps>) {
-  return <p className="text-sm">{children}</p>;
+  return <div className="text-sm">{children}</div>;
 }
 
 export default function Settings() {
@@ -68,6 +72,10 @@ export default function Settings() {
 
   const copyLimit = useAppSelector(selectCopyLimit);
 
+  const chunkSize = useAppSelector(selectChunkSize);
+
+  const maxFileSize = useAppSelector(selectMaxFileSize);
+
   const [newExcludeText, setNewExcludeText] = useState<ExcludeItem>('');
 
   const [showAddExclude, setShowAddExclude] = useState(false);
@@ -80,19 +88,19 @@ export default function Settings() {
   const [showAddReplace, setShowAddReplace] = useState(false);
 
   function handleRemoveExclude(index: number) {
-    const setSet = [...exclude];
+    const setSet = [...(exclude || [])];
     setSet.splice(index, 1);
     dispatch(setExclude(setSet));
   }
 
   function handleEditExclude(index: number, newText: string) {
-    const setSet = [...exclude];
+    const setSet = [...(exclude || [])];
     setSet[index] = newText;
     dispatch(setExclude(setSet));
   }
 
   function handleAddExclude() {
-    dispatch(setExclude([...exclude, newExcludeText]));
+    dispatch(setExclude([...(exclude || []), newExcludeText]));
     setNewExcludeText('');
   }
 
@@ -102,13 +110,13 @@ export default function Settings() {
   }, []);
 
   function handleRemoveReplace(index: number) {
-    const setSet = [...replace];
+    const setSet = [...(replace || [])];
     setSet.splice(index, 1);
     dispatch(setReplace(setSet));
   }
 
   function handleAddReplace() {
-    dispatch(setReplace([...replace, newReplace]));
+    dispatch(setReplace([...(replace || []), newReplace]));
     setNewReplace({ from: '', to: '' });
   }
 
@@ -129,18 +137,19 @@ export default function Settings() {
             Configure glob patterns for excluding files and folders.
           </SettingsItemDescription>
           <SettingsItemContent>
-            {exclude.map((item, i) => (
-              <EditableListItem
-                // eslint-disable-next-line react/no-array-index-key
-                key={item + i}
-                value={item}
-                placeholder="Exclude Pattern"
-                onDelete={() => handleRemoveExclude(i)}
-                onUpdate={(updatedExcludePattern) =>
-                  handleEditExclude(i, String(updatedExcludePattern))
-                }
-              />
-            ))}
+            {exclude &&
+              exclude.map((item, i) => (
+                <EditableListItem
+                  // eslint-disable-next-line react/no-array-index-key
+                  key={item + i}
+                  value={item}
+                  placeholder="Exclude Pattern"
+                  onDelete={() => handleRemoveExclude(i)}
+                  onUpdate={(updatedExcludePattern) =>
+                    handleEditExclude(i, String(updatedExcludePattern))
+                  }
+                />
+              ))}
             {showAddExclude ? (
               <div className="flex flex-row items-center w-full space-x-2 text-sm">
                 <input
@@ -205,23 +214,24 @@ export default function Settings() {
             Configure patterns for replacing content in files.
           </SettingsItemDescription>
           <SettingsItemContent>
-            {replace.map((item, i) => (
-              <li
-                // eslint-disable-next-line react/no-array-index-key
-                key={item.from + item.to + i}
-                className="flex flex-row space-x-2 space-y-1 text-sm hover:bg-accent item-center text-muted-foreground"
-              >
-                <span className="w-full">{item.from}</span>
-                <MoveRight />
-                <span className="w-full">{item.to}</span>
-                {/* <button type="button">
+            {replace &&
+              replace.map((item, i) => (
+                <li
+                  // eslint-disable-next-line react/no-array-index-key
+                  key={item.from + item.to + i}
+                  className="flex flex-row space-x-2 space-y-1 text-sm hover:bg-accent item-center text-muted-foreground"
+                >
+                  <span className="w-full">{item.from}</span>
+                  <MoveRight />
+                  <span className="w-full">{item.to}</span>
+                  {/* <button type="button">
                   <Edit2 className="w-4 h-4" />
                 </button> */}
-                <button type="button" onClick={() => handleRemoveReplace(i)}>
-                  <X className="w-5 h-5" />
-                </button>
-              </li>
-            ))}
+                  <button type="button" onClick={() => handleRemoveReplace(i)}>
+                    <X className="w-5 h-5" />
+                  </button>
+                </li>
+              ))}
             {showAddReplace ? (
               <div className="flex flex-row items-center w-full space-x-2 text-sm">
                 <input
@@ -292,8 +302,39 @@ export default function Settings() {
           </SettingsItemDescription>
           <Input
             type="number"
-            value={copyLimit}
-            onChange={(e) => dispatch(setCopyLimit(Number(e.target.value)))}
+            value={copyLimit ?? ''}
+            onChange={(e) => {
+              dispatch(setCopyLimit(Number(e.target.value)));
+            }}
+            placeholder="500000"
+          />
+        </SettingsItem>
+        <SettingsItem>
+          <SettingsItemHeader>
+            Chunk Size: <b>Limit</b>
+          </SettingsItemHeader>
+          <SettingsItemDescription>
+            How many files to read at a time. Default is 1000.
+          </SettingsItemDescription>
+          <Input
+            type="number"
+            value={chunkSize ?? ''}
+            onChange={(e) => dispatch(setChunkSize(Number(e.target.value)))}
+            placeholder="1000"
+          />
+        </SettingsItem>
+        <SettingsItem>
+          <SettingsItemHeader>
+            Max File Size: <b>Limit</b>
+          </SettingsItemHeader>
+          <SettingsItemDescription>
+            Maximum file size to be read in megabytes. Default is 8MB.
+          </SettingsItemDescription>
+          <Input
+            type="number"
+            value={maxFileSize ?? ''}
+            onChange={(e) => dispatch(setMaxFileSize(Number(e.target.value)))}
+            placeholder="8"
           />
         </SettingsItem>
       </div>

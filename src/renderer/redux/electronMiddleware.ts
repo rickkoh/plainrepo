@@ -1,5 +1,4 @@
 import { Dispatch, Middleware, UnknownAction } from 'redux';
-import { AppSettings } from '@/src/types/AppSettings';
 import { FileNode } from '@/src/types/FileNode';
 import { ipcChannels } from '@/src/shared/ipcChannels';
 
@@ -15,14 +14,11 @@ const electronMiddleware: Middleware<{}, RootState, Dispatch<UnknownAction>> =
 
     // Then handle any side effects
     switch (unknownAction.type) {
-      case 'app/triggerUpdateSettings': {
-        window.electron.ipcRenderer.updateAppSettings(
-          unknownAction.payload as AppSettings,
-        );
-        break;
-      }
-
-      case /app\/set/.test(unknownAction.type) ? unknownAction.type : '': {
+      case /^app\/(set|add|remove|update|replace|toggle)/.test(
+        unknownAction.type,
+      )
+        ? unknownAction.type
+        : '': {
         window.electron.ipcRenderer.updateAppSettings(store.getState().app);
         break;
       }

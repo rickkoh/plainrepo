@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
 import './Tailwind.css';
@@ -17,10 +18,19 @@ import FileContent from './components/FileContent';
 
 import MainTheme from './components/Theme';
 import { setupElectronListeners } from './redux/electronMiddleware';
+import { loadAppSettings } from './redux/slices/appSlice';
+import { useAppDispatch } from './redux/hooks';
 
 setupElectronListeners(store);
 
 function Hello() {
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    dispatch(loadAppSettings());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <MainTheme>
       <div className="flex flex-row w-full h-full">

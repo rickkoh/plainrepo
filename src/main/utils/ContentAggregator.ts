@@ -1,5 +1,10 @@
 import { FileContent } from '@/src/types/FileContent';
-import { chunk } from '@/lib/utils';
+import { chunk, mbToBytes } from '@/lib/utils';
+import {
+  ChunkSizeSchema,
+  MaxFileSizeSchema,
+  ReplaceListSchema,
+} from '@/src/types/AppSettings';
 
 import { FileNode } from '../../types/FileNode';
 import { readAppSettings } from './AppSettings';
@@ -10,6 +15,7 @@ const fs = require('fs');
 export function getContent(
   path: string,
   transform?: (output: string) => string,
+  maxSize?: number,
 ): string {
   if (!fs.existsSync) {
     return '';
@@ -21,6 +27,10 @@ export function getContent(
     return '';
   }
 
+  if (maxSize && stats.size > maxSize) {
+    return `File is too large to display (${stats.size} bytes)`;
+  }
+
   const rawContent = fs.readFileSync(path, 'utf-8');
   return transform ? transform(rawContent) : rawContent;
 }
@@ -28,14 +38,17 @@ export function getContent(
 export function streamGetContent(
   fileNodeList: FileNode[],
   callback: (fileContent: FileContent[]) => void,
-  chunkOption?: { size: number },
 ) {
   const appSettings = readAppSettings();
-  const replaceList = appSettings.replace || [];
+  const replaceList = ReplaceListSchema.parse(appSettings.replace);
+  const maxFileSize = mbToBytes(
+    MaxFileSizeSchema.parse(appSettings.maxFileSize),
+  );
+  const chunkSize = ChunkSizeSchema.parse(appSettings.chunkSize);
 
   let index = -1;
 
-  chunk(fileNodeList, chunkOption?.size ?? 20).forEach((fileNodes) => {
+  chunk(fileNodeList, chunkSize).forEach((fileNodes) => {
     const fileContents = fileNodes.map((fileNode) => {
       index += 1;
       return {
@@ -45,6 +58,7 @@ export function streamGetContent(
         content: getContent(
           fileNode.path,
           (output) => applyReplacements(output, replaceList), // TODO: Refactor transformer
+          maxFileSize,
         ),
       };
     });

@@ -53,11 +53,11 @@ export default function Toolbar() {
 
     const estimated = TokenEstimator.estimateTokens(content);
 
-    if (estimated <= copyLimit) {
+    if (estimated <= copyLimit!) {
       copy(content);
       toast('Copied everything');
     } else {
-      toast(`Token count exceeds limit of ${betterNumberFormat(copyLimit)}`);
+      toast(`Token count exceeds limit of ${betterNumberFormat(copyLimit!)}`);
     }
     delayedHoverOn.cancel();
     setIsHovering(false);
@@ -71,11 +71,11 @@ export default function Toolbar() {
 
     const estimated = TokenEstimator.estimateTokens(content);
 
-    if (estimated <= copyLimit) {
+    if (estimated <= copyLimit!) {
       copy(content);
       toast('Copied contents only');
     } else {
-      toast(`Token count exceeds limit of ${betterNumberFormat(copyLimit)}`);
+      toast(`Token count exceeds limit of ${betterNumberFormat(copyLimit!)}`);
     }
     setIsHovering(false);
     delayedHoverOn.cancel();
@@ -87,11 +87,11 @@ export default function Toolbar() {
     }
     const estimated = TokenEstimator.estimateTokens(directoryTree);
 
-    if (estimated <= copyLimit) {
+    if (estimated <= copyLimit!) {
       copy(directoryTree);
       toast('Copied directory tree');
     } else {
-      toast(`Token count exceeds limit of ${betterNumberFormat(copyLimit)}`);
+      toast(`Token count exceeds limit of ${betterNumberFormat(copyLimit!)}`);
     }
     setIsHovering(false);
     delayedHoverOn.cancel();

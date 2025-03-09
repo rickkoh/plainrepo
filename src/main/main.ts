@@ -89,26 +89,22 @@ ipcMain.handle('stream:content', async (event, arg) => {
 
   // Stream content in chunks
   const flattenedFileNodes = flattenFileNode(fileNode);
-  streamGetContent(
-    flattenedFileNodes,
-    (fileContents: FileContent[]) => {
-      if (!mainWindow) {
-        return;
-      }
+  streamGetContent(flattenedFileNodes, (fileContents: FileContent[]) => {
+    if (!mainWindow) {
+      return;
+    }
 
-      // Update token count with your preferred for loop style
-      for (let i = 0; i < fileContents.length; i += 1) {
-        const fileContent = fileContents[i];
-        count += TokenEstimator.estimateTokens(fileContent.content);
-      }
+    // Update token count with your preferred for loop style
+    for (let i = 0; i < fileContents.length; i += 1) {
+      const fileContent = fileContents[i];
+      count += TokenEstimator.estimateTokens(fileContent.content);
+    }
 
-      mainWindow.webContents.send(ipcChannels.TOKEN_COUNT_SET, count);
+    mainWindow.webContents.send(ipcChannels.TOKEN_COUNT_SET, count);
 
-      // Add new content
-      mainWindow.webContents.send(ipcChannels.FILE_CONTENTS_ADD, fileContents);
-    },
-    { size: 1000 },
-  );
+    // Add new content
+    mainWindow.webContents.send(ipcChannels.FILE_CONTENTS_ADD, fileContents);
+  });
 
   return null;
 });
