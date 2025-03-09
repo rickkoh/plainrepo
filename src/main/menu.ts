@@ -168,29 +168,27 @@ export default class MenuBuilder {
       label: 'Help',
       submenu: [
         {
-          label: 'Learn More',
+          label: 'Homepage',
           click() {
-            shell.openExternal('https://electronjs.org');
+            shell.openExternal('https://plainrepo.com');
           },
         },
         {
-          label: 'Documentation',
+          label: 'Feature Request',
           click() {
-            shell.openExternal(
-              'https://github.com/electron/electron/tree/main/docs#readme',
-            );
+            shell.openExternal('https://github.com/rickkoh/plainrepo/issues');
           },
         },
         {
           label: 'Community Discussions',
           click() {
-            shell.openExternal('https://www.electronjs.org/community');
+            shell.openExternal('https://plainrepo.com/community');
           },
         },
         {
-          label: 'Search Issues',
+          label: 'Feature Request',
           click() {
-            shell.openExternal('https://github.com/electron/electron/issues');
+            shell.openExternal('https://github.com/rickkoh/plainrepo/issues');
           },
         },
       ],
