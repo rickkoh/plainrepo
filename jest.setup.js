@@ -13,6 +13,7 @@ Object.defineProperty(window, 'electron', {
       saveWorkspace: jest.fn().mockResolvedValue(undefined),
       loadWorkspace: jest.fn().mockResolvedValue([]),
       updateAppSettings: jest.fn().mockResolvedValue({ success: true }),
+      readAppSettings: jest.fn().mockResolvedValue({}),
     },
   },
   writable: true,

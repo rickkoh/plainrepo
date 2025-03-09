@@ -1,7 +1,7 @@
 /* eslint-disable jsx-a11y/label-has-associated-control */
 import { Button } from '@/components/ui/button';
 import { MoveRight, X } from 'lucide-react';
-import { PropsWithChildren, useCallback, useState } from 'react';
+import { PropsWithChildren, useCallback, useEffect, useState } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ExcludeItem, ReplaceItem } from '@/src/types/AppSettings';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,7 @@ import {
 } from '../redux/selectors/appSelectors';
 
 import {
+  loadAppSettings,
   setChunkSize,
   setCopyLimit,
   setExclude,
@@ -63,6 +64,11 @@ function SettingsItemContent({
 
 export default function Settings() {
   const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    dispatch(loadAppSettings());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const exclude = useAppSelector(selectExclude);
 

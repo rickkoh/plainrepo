@@ -40,23 +40,6 @@ export default class TokenEstimator {
 
     return Math.floor(output);
   }
-
-  static streamEstimateTokens(
-    fileNodeQueue: FileNode[],
-    callback: (tokens: number) => void,
-    chunkOption?: {
-      size: number;
-    },
-  ): void {
-    chunk(fileNodeQueue, chunkOption?.size ?? 20).forEach((c) => {
-      c.forEach((fileNode) => {
-        if (fileNode.type === 'file' && fileNode.content) {
-          const tokens = TokenEstimator.estimateTokens(fileNode.content);
-          callback(tokens);
-        }
-      });
-    });
-  }
 }
 
 export interface TokenAggregator {
