@@ -211,7 +211,6 @@
       "package.json"
     ],
     "mac": {
-      "sign": ".erb/scripts/notarize.js",
       "notarize": false,
       "target": {
         "target": "default",
