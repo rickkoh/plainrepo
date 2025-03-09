@@ -35,7 +35,7 @@ export default function reconcileFileNode(
   // Look up the current node in the saved map by its unique path.
   const savedNode = savedMap.get(current.path);
   const selected = savedNode ? savedNode.selected : false;
-  const content = savedNode ? savedNode.content : undefined;
+  // const content = savedNode ? savedNode.content : undefined;
   const lastSynced = savedNode ? savedNode.lastSynced : undefined;
 
   let reconciledChildren: FileNode[] | undefined;
@@ -49,7 +49,7 @@ export default function reconcileFileNode(
   return {
     ...current,
     selected,
-    content,
+    // content,
     lastSynced,
     children: reconciledChildren,
   };
