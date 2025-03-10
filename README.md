@@ -24,7 +24,7 @@ PlainRepo is a desktop application that helps developers **select**, **view**, a
 1. **Clone the Repository**
 
    ```bash
-   git clone https://github.com/your-username/plainrepo.git
+   git clone https://github.com/rickkoh/plainrepo.git
    cd plainrepo
    ```
 
