@@ -12,6 +12,8 @@ import path from 'path';
 import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
+import chokidar from 'chokidar';
+
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import {
@@ -21,7 +23,11 @@ import {
 } from './utils/FileBuilder';
 import { streamGetContent } from './utils/ContentAggregator';
 import { FileNodeSchema } from '../types/FileNode';
-import { readAppSettings, writeAppSettings } from './utils/AppSettings';
+import {
+  readAppSettings,
+  writeAppSettings,
+  globToRegex,
+} from './utils/AppSettings';
 import { FileContent } from '../types/FileContent';
 import TokenEstimator from './utils/TokenEstimator';
 import { ipcChannels } from '../shared/ipcChannels';
@@ -52,6 +58,33 @@ ipcMain.on('dialog:openDirectory', async () => {
   if (canceled) {
     return null;
   }
+
+  const appSettings = readAppSettings();
+  const excludeList = appSettings.exclude || [];
+  const ignoreFunction = globToRegex(excludeList);
+
+  const watcher = chokidar.watch(filePaths[0], {
+    depth: 1,
+    ignored: ignoreFunction,
+  });
+
+  // TODO: Find out where the is the single source of truth for the file node
+  // Update the file node when the file is added, changed, or deleted
+  // @ts-ignore
+  watcher.on('add', (path1) => {
+    console.log('add', path1);
+  });
+
+  // @ts-ignore
+  watcher.on('change', (path1) => {
+    console.log('change', path1);
+  });
+
+  // @ts-ignore
+  watcher.on('unlink', (path1) => {
+    console.log('unlink', path1);
+  });
+
   mainWindow.webContents.send('workspace:path', filePaths[0]);
 
   const start = Date.now();
