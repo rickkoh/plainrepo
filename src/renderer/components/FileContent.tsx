@@ -69,7 +69,13 @@ export default function FileContent() {
   }
 
   if (!fileContents || fileContents.length === 0) {
-    return <div />;
+    return (
+      <div className="flex flex-col h-full bg-background p-6 text-muted-foreground justify-center items-center">
+        <p className="text-center">
+          Select a file from the explorer to view its content.
+        </p>
+      </div>
+    );
   }
 
   return (
