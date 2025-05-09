@@ -85,7 +85,10 @@ Features:
 
 Big changes:
   ☐ Change to use react-window
-  ☐ Change to use redux (kiv)
+  ✔ Change to use redux (kiv) @done(25-05-10 18:34)
+  ☐ Implement file discovery to watch lesser files
+    ☐ Discover files level by level
+    ☐ Use chokidar to watch for file changes
 
 Optimisations:
   ☐ Optimise reading of app settings for excluded folders/files
