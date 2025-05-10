@@ -5,6 +5,7 @@ import { ipcChannels } from '@/src/shared/ipcChannels';
 import { RootState } from './rootReducer';
 
 // This middleware intercepts actions that need to communicate with Electron
+// Renderer => Main
 const electronMiddleware: Middleware<{}, RootState, Dispatch<UnknownAction>> =
   (store) => (next) => (action) => {
     // First, pass the action through to the reducer
@@ -13,6 +14,7 @@ const electronMiddleware: Middleware<{}, RootState, Dispatch<UnknownAction>> =
     const unknownAction = action as UnknownAction;
 
     // Then handle any side effects
+    // Action types can be identified {sliceName}/{actionName}
     switch (unknownAction.type) {
       case /^app\/(set|add|remove|update|replace|toggle)/.test(
         unknownAction.type,
@@ -64,6 +66,9 @@ const electronMiddleware: Middleware<{}, RootState, Dispatch<UnknownAction>> =
   };
 
 // Set up listeners for IPC events from Electron
+// Listens and dispatches actions to the store
+// Actions types are {sliceName}/{actionName}
+// Main => Renderer
 export const setupElectronListeners = (store: any) => {
   // Workspace events
   window.electron.ipcRenderer.on(
@@ -73,6 +78,7 @@ export const setupElectronListeners = (store: any) => {
     },
   );
 
+  // File node events
   window.electron.ipcRenderer.on(
     ipcChannels.WORKSPACE_FILENODE_SET,
     (fileNode: unknown) => {
@@ -84,8 +90,21 @@ export const setupElectronListeners = (store: any) => {
     },
   );
 
+  // Directory events
+  window.electron.ipcRenderer.on(
+    ipcChannels.DIRECTORY_EXPAND,
+    (expandedNode: unknown) => {
+      store.dispatch({ type: 'files/expandDirectory', payload: expandedNode });
+    },
+  );
+
+  // File content events
   window.electron.ipcRenderer.on(ipcChannels.FILE_CONTENTS_CLEAR, () => {
-    store.dispatch({ type: 'fileContents/clearFileContents' });
+    throw new Error('Not implemented');
+  });
+
+  window.electron.ipcRenderer.on(ipcChannels.WORKSPACE_FILENODE_DELETE, () => {
+    throw new Error('Not implemented');
   });
 
   window.electron.ipcRenderer.on(

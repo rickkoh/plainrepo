@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+export const PathSchema = z.string();
+
 export const BaseFileNodeSchema = z.object({
   name: z.string(),
   path: z.string(),
@@ -22,7 +24,11 @@ export type FileNode = {
   selected?: boolean;
   lastSynced?: Date;
   children?: FileNode[];
+  content?: string;
+  loaded?: boolean;
+  error?: string;
 };
 
 // Type inference for an array of file nodes
+export type Path = z.infer<typeof PathSchema>;
 export type FileNodes = FileNode[];

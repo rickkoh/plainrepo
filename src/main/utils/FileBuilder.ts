@@ -221,3 +221,209 @@ export function flattenFileNode(fileNode: FileNode): FileNode[] {
   flatten(fileNode);
   return result;
 }
+
+/**
+ * Build a file node for a single directory level (non-recursive)
+ *
+ * @param dirPath - The directory path to build the file node for
+ * @returns The file node for the directory
+ */
+export function buildFileNodeSingleLevel(dirPath: string): FileNode {
+  const appSettings = readAppSettings();
+  const excludePatterns = ExcludeListSchema.parse(appSettings.exclude);
+  const shouldIncludeGitIgnore = ShouldIncludeGitIgnoreSchema.parse(
+    appSettings.shouldIncludeGitIgnore,
+  );
+
+  if (shouldIncludeGitIgnore) {
+    excludePatterns.push(...getGitIgnorePatterns(dirPath));
+  }
+
+  const excludeRegexes = buildRegexes(excludePatterns);
+  const baseName = path.basename(dirPath);
+
+  const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+
+  const children = entries
+    .filter((entry: Dirent) => !shouldExclude(entry.name, excludeRegexes))
+    .map((entry: Dirent) => {
+      const fullPath = path.join(dirPath, entry.name);
+
+      if (entry.isDirectory()) {
+        return {
+          name: entry.name,
+          path: fullPath,
+          type: 'directory' as const,
+          children: [], // Empty array indicates unexpanded directory
+          selected: false,
+          loaded: false, // New flag to indicate if directory contents have been loaded
+        };
+      }
+
+      return {
+        name: entry.name,
+        path: fullPath,
+        type: 'file' as const,
+        selected: false,
+      };
+    });
+
+  return {
+    name: baseName,
+    path: dirPath,
+    type: 'directory',
+    children,
+    selected: false,
+    loaded: true, // Root directory is considered loaded
+  };
+}
+
+/**
+ * Expand a directory node by loading its contents
+ *
+ * @deprecated Use searchFileNode + buildFileNodeSingleLevel directly instead
+ * This function mutates the original fileNode tree, which can lead to issues.
+ * Instead, find the node with searchFileNode and expand it with buildFileNodeSingleLevel.
+ *
+ * @param dirPath - The directory path to expand
+ * @param fileNode - The root file node to update
+ * @returns The updated root node with the expanded directory
+ */
+export function expandDirectoryNode(
+  dirPath: string,
+  fileNode: FileNode,
+): FileNode {
+  // Function to find and expand the target directory
+  const findAndExpand = (node: FileNode): boolean => {
+    if (node.path === dirPath) {
+      // This is the directory to expand
+      const expandedNode = buildFileNodeSingleLevel(dirPath);
+
+      // Preserve selected state from the original node
+      expandedNode.selected = node.selected;
+
+      // Only update the children and loaded status
+      node.children = expandedNode.children;
+      node.loaded = true;
+      node.error = expandedNode.error;
+
+      return true;
+    }
+
+    // Recursively search for the directory in children
+    if (node.children && node.children.length > 0) {
+      return node.children.some(
+        (child) => child.type === 'directory' && findAndExpand(child),
+      );
+    }
+
+    return false;
+  };
+
+  findAndExpand(fileNode);
+  return fileNode;
+}
+
+export function searchFileNode(
+  fileNode: FileNode,
+  searchPath: string,
+): FileNode | null {
+  if (fileNode.path === searchPath) {
+    return fileNode;
+  }
+
+  if (fileNode.children) {
+    for (let i = 0; i < fileNode.children.length; i += 1) {
+      const child = fileNode.children[i];
+      const result = searchFileNode(child, searchPath);
+      if (result) return result;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Search for files and directories matching a pattern
+ *
+ * @param rootDir - The root directory to search in
+ * @param searchTerm - The search term to match
+ * @param options - Search options
+ * @returns Array of matching file nodes
+ */
+export function searchFileSystem(
+  rootDir: string,
+  searchTerm: string,
+  options: {
+    includeFiles?: boolean;
+    includeDirs?: boolean;
+    maxResults?: number;
+    caseSensitive?: boolean;
+  } = {},
+): Promise<FileNode[]> {
+  const {
+    includeFiles = true,
+    includeDirs = true,
+    maxResults = 1000,
+    caseSensitive = false,
+  } = options;
+
+  const appSettings = readAppSettings();
+  const excludePatterns = ExcludeListSchema.parse(appSettings.exclude);
+  const excludeRegexes = buildRegexes(excludePatterns);
+
+  const results: FileNode[] = [];
+  const regex = new RegExp(
+    searchTerm.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&'),
+    caseSensitive ? '' : 'i',
+  );
+
+  return new Promise((resolve) => {
+    const searchDir = async (dirPath: string) => {
+      if (results.length >= maxResults) return;
+
+      const entries = await fs.promises.readdir(dirPath, {
+        withFileTypes: true,
+      });
+
+      entries.forEach(async (entry: Dirent) => {
+        if (results.length >= maxResults) return;
+
+        if (shouldExclude(entry.name, excludeRegexes)) return;
+
+        const fullPath = path.join(dirPath, entry.name);
+
+        // Check if this entry matches the search term
+        const matches = regex.test(entry.name);
+
+        if (entry.isDirectory()) {
+          if (matches && includeDirs) {
+            results.push({
+              name: entry.name,
+              path: fullPath,
+              type: 'directory',
+              children: [],
+              selected: false,
+              loaded: false,
+            });
+          }
+
+          // Continue searching in this directory
+          await searchDir(fullPath);
+        } else if (entry.isFile() && matches && includeFiles) {
+          results.push({
+            name: entry.name,
+            path: fullPath,
+            type: 'file',
+            selected: false,
+            loaded: false,
+          });
+        }
+      });
+    };
+
+    // Start the search
+    searchDir(rootDir);
+    resolve(results);
+  });
+}

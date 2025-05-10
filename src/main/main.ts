@@ -17,12 +17,13 @@ import chokidar from 'chokidar';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import {
-  buildFileNode,
+  buildFileNodeSingleLevel,
   flattenFileNode,
   generateDirectoryStructure,
+  searchFileNode,
 } from './utils/FileBuilder';
 import { streamGetContent } from './utils/ContentAggregator';
-import { FileNodeSchema } from '../types/FileNode';
+import { FileNode, FileNodeSchema, PathSchema } from '../types/FileNode';
 import {
   readAppSettings,
   writeAppSettings,
@@ -42,6 +43,34 @@ class AppUpdater {
 
 let mainWindow: BrowserWindow | null = null;
 
+// Global state to track expanded directories and watchers
+let activeWatcher: any = null;
+let rootFileNode: FileNode | null = null;
+let rootDirectory: string | null = null;
+const expandedDirectories = new Set<string>();
+
+// Helper function to add directories to watcher
+function watchDirectory(dirPath: string) {
+  if (!activeWatcher) return;
+
+  console.log('Adding directory to watch:', dirPath);
+  expandedDirectories.add(dirPath);
+
+  // Add this directory to the watcher
+  activeWatcher.add(dirPath);
+}
+
+// Helper function to remove directories from watcher
+function unwatchDirectory(dirPath: string) {
+  if (!activeWatcher) return;
+
+  console.log('Removing directory from watch:', dirPath);
+  expandedDirectories.delete(dirPath);
+
+  // Remove this directory from the watcher
+  activeWatcher.unwatch(dirPath);
+}
+
 ipcMain.on('ipc-example', async (event, arg) => {
   const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
   console.log(msgTemplate(arg));
@@ -52,49 +81,107 @@ ipcMain.on('dialog:openDirectory', async () => {
   if (!mainWindow) {
     return null;
   }
-  const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+
+  const {
+    canceled,
+    filePaths: [selectedPath],
+  } = await dialog.showOpenDialog(mainWindow, {
     properties: ['openDirectory'],
   });
+
   if (canceled) {
     return null;
   }
 
+  rootDirectory = selectedPath;
+
+  if (activeWatcher) {
+    activeWatcher.close();
+    activeWatcher = null;
+  }
+
   const appSettings = readAppSettings();
   const excludeList = appSettings.exclude || [];
-  const ignoreFunction = globToRegex(excludeList);
 
-  const watcher = chokidar.watch(filePaths[0], {
-    depth: 1,
-    ignored: ignoreFunction,
+  activeWatcher = chokidar.watch([], {
+    ignored: globToRegex(excludeList),
+    persistent: true,
+    ignoreInitial: true,
+    awaitWriteFinish: true,
+    depth: 0,
   });
 
-  // TODO: Find out where the is the single source of truth for the file node
-  // Update the file node when the file is added, changed, or deleted
-  // @ts-ignore
-  watcher.on('add', (path1) => {
-    console.log('add', path1);
-  });
+  // TODO: Add active watcher listeners here
+  // activeWatcher.on('add', (path) => {
+  //   console.log('add', path);
+  // });
 
-  // @ts-ignore
-  watcher.on('change', (path1) => {
-    console.log('change', path1);
-  });
-
-  // @ts-ignore
-  watcher.on('unlink', (path1) => {
-    console.log('unlink', path1);
-  });
-
-  mainWindow.webContents.send('workspace:path', filePaths[0]);
+  mainWindow.webContents.send('workspace:path', selectedPath);
 
   const start = Date.now();
-  const directoryTree = buildFileNode(filePaths[0]);
+  rootFileNode = buildFileNodeSingleLevel(selectedPath);
+  watchDirectory(rootDirectory);
   const timeTaken = Date.now() - start;
 
   console.log('Time taken:', timeTaken);
-  mainWindow.webContents.send('workspace:fileNode', directoryTree);
+  mainWindow.webContents.send('workspace:fileNode', rootFileNode);
 
   return null;
+});
+
+ipcMain.on('directory:expand', (event, arg) => {
+  console.log('Expanding directory', arg);
+  // When expand, we will disocver the expanded node
+  // and add it to the watcher
+  // The arg is the path of the expanded node
+
+  // We wil search for the node in the rootFileNode
+  // And then we will expand (add it to the watcher), and make a call back to the renderer
+  // And the renderer will update the UI
+
+  if (!mainWindow || !rootFileNode) {
+    return;
+  }
+
+  const parsedResult = PathSchema.safeParse(arg);
+  if (!parsedResult.success) {
+    return;
+  }
+
+  const directoryPath = parsedResult.data;
+
+  console.log('Searching for target node', directoryPath);
+  const targetnode = searchFileNode(rootFileNode, directoryPath);
+
+  // if (!targetnode || targetnode.expanded) {
+  // TODO: Not sure if we want to collapse the directory if it's already expanded
+  if (!targetnode) {
+    return;
+  }
+
+  // Get the expanded version of the node with its children
+  const expandedNode = buildFileNodeSingleLevel(directoryPath);
+
+  // Preserve selected state from the original node
+  if (targetnode.selected) {
+    expandedNode.selected = targetnode.selected;
+  }
+
+  targetnode.children = expandedNode.children;
+  targetnode.loaded = true;
+
+  watchDirectory(directoryPath);
+
+  mainWindow.webContents.send(ipcChannels.DIRECTORY_EXPAND, {
+    path: directoryPath,
+    fileNode: expandedNode,
+  });
+});
+
+ipcMain.on('directory:collapse', (event, arg) => {
+  console.log('Collapsing directory', arg);
+  // When collapse, we will remove the directory from the watcher
+  unwatchDirectory(arg);
 });
 
 ipcMain.handle('stream:content', async (event, arg) => {

@@ -38,7 +38,15 @@ function TreeNode({
           className={cn(
             fileNode.type === 'file' && 'opacity-0 pointer-events-none',
           )}
-          onClick={() => setOpen(!open)}
+          onClick={() => {
+            console.log('Expanding directory', fileNode.path);
+            const action = open ? 'collapse' : 'expand';
+            window.electron.ipcRenderer.sendMessage(
+              `directory:${action}`,
+              fileNode.path,
+            );
+            setOpen(!open);
+          }}
         >
           <ChevronRight className={cn(open && 'rotate-90')} />
         </button>

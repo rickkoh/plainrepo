@@ -3,6 +3,12 @@ export const ipcChannels = {
   // Workspace
   WORKSPACE_PATH_SET: 'workspace:path',
   WORKSPACE_FILENODE_SET: 'workspace:fileNode',
+  WORKSPACE_FILENODE_UPDATE: 'workspace:fileNodeUpdate',
+  WORKSPACE_FILENODE_DELETE: 'workspace:fileNodeDelete',
+
+  // Directory
+  DIRECTORY_EXPAND: 'directory:expand',
+  DIRECTORY_COLLAPSE: 'directory:collapse',
 
   // File contents
   FILE_CONTENTS_CLEAR: 'fileContents:clear',
