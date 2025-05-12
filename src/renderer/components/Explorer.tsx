@@ -9,8 +9,7 @@ import { Label } from '@/components/ui/label';
 import { ChevronRight } from 'lucide-react';
 
 import { FileNode } from '../../types/FileNode';
-import { useAppDispatch, useAppSelector } from '../redux/hooks';
-import { toggleFileNodeSelection } from '../redux/slices/filesSlice';
+import { useAppSelector } from '../redux/hooks';
 import { selectWorkingDir } from '../redux/selectors/workspaceSelectors';
 import { selectFileNode } from '../redux/selectors/filesSelectors';
 
@@ -23,7 +22,7 @@ function TreeNode({
   isRoot?: boolean;
   level?: number;
 }) {
-  const dispatch = useAppDispatch();
+  // const dispatch = useAppDispatch();
 
   const [open, setOpen] = useState<CheckedState>(isRoot ?? false);
 
@@ -39,12 +38,10 @@ function TreeNode({
             fileNode.type === 'file' && 'opacity-0 pointer-events-none',
           )}
           onClick={() => {
-            console.log('Expanding directory', fileNode.path);
-            const action = open ? 'collapse' : 'expand';
-            window.electron.ipcRenderer.sendMessage(
-              `directory:${action}`,
-              fileNode.path,
-            );
+            window.electron.ipcRenderer.sendMessage(`directory:expand`, {
+              path: fileNode.path,
+              expanded: !open,
+            });
             setOpen(!open);
           }}
         >
@@ -53,14 +50,12 @@ function TreeNode({
         <Checkbox
           id={fileNode.path}
           checked={fileNode.selected}
-          onCheckedChange={(checked) =>
-            dispatch(
-              toggleFileNodeSelection({
-                path: fileNode.path,
-                selected: checked === true,
-              }),
-            )
-          }
+          onCheckedChange={(checked) => {
+            window.electron.ipcRenderer.sendMessage('fileNode:select', {
+              path: fileNode.path,
+              selected: checked === true,
+            });
+          }}
         />
         <Label
           htmlFor={fileNode.path}

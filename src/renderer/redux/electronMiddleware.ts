@@ -1,5 +1,4 @@
 import { Dispatch, Middleware, UnknownAction } from 'redux';
-import { FileNode } from '@/src/types/FileNode';
 import { ipcChannels } from '@/src/shared/ipcChannels';
 
 import { RootState } from './rootReducer';
@@ -29,31 +28,6 @@ const electronMiddleware: Middleware<{}, RootState, Dispatch<UnknownAction>> =
         window.electron.ipcRenderer.sendMessage(
           ipcChannels.DIALOG_OPEN_DIRECTORY,
         );
-        break;
-      }
-
-      case 'files/setFileNode': {
-        window.electron.ipcRenderer.streamContent(
-          unknownAction.payload as FileNode,
-        );
-        break;
-      }
-
-      case 'files/toggleFileNodeSelection': {
-        if (store.getState().files.fileNode) {
-          window.electron.ipcRenderer.streamContent(
-            store.getState().files.fileNode!,
-          );
-        }
-        break;
-      }
-
-      case 'files/resetSelection': {
-        if (store.getState().files.fileNode) {
-          window.electron.ipcRenderer.streamContent(
-            store.getState().files.fileNode!,
-          );
-        }
         break;
       }
 
@@ -100,7 +74,7 @@ export const setupElectronListeners = (store: any) => {
 
   // File content events
   window.electron.ipcRenderer.on(ipcChannels.FILE_CONTENTS_CLEAR, () => {
-    throw new Error('Not implemented');
+    store.dispatch({ type: 'fileContents/clearFileContents' });
   });
 
   window.electron.ipcRenderer.on(ipcChannels.WORKSPACE_FILENODE_DELETE, () => {

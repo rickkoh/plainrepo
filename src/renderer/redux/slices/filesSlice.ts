@@ -1,5 +1,6 @@
 import { FileNode } from '@/src/types/FileNode';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { toggleFileNodeSelection as toggleNodeSelection } from '@/src/shared/utils/FileNodeUtils';
 
 interface FileState {
   byId: Record<string, string>;
@@ -53,7 +54,6 @@ const fileSlice = createSlice({
           if (currentNode) {
             if (currentNode.path === path) {
               currentNode.children = fileNode.children;
-              currentNode.loaded = true;
               return true;
             }
 
@@ -75,59 +75,18 @@ const fileSlice = createSlice({
       state,
       action: PayloadAction<{ path: string; selected: boolean }>,
     ) {
-      // Beyond finding and toggle, we have to recursively expand/discover all children of the selected node
       const { path, selected } = action.payload;
 
       if (!state.fileNode) return;
 
-      const toggleChildrenSelection = (node: FileNode, isSelected: boolean) => {
-        if (!node.children) return;
-
-        for (let i = 0; i < node.children.length; i += 1) {
-          const child = node.children[i];
-          child.selected = isSelected;
-
-          if (child.type === 'directory' && child.children) {
-            toggleChildrenSelection(child, isSelected);
-          }
-        }
-      };
-
-      const findAndToggle = (node: FileNode): boolean => {
-        if (node.path === path) {
-          node.selected = selected;
-
-          if (node.type === 'directory' && node.children) {
-            toggleChildrenSelection(node, selected);
-          }
-
-          return true;
-        }
-
-        if (node.type === 'directory' && node.children) {
-          for (let i = 0; i < node.children.length; i += 1) {
-            if (findAndToggle(node.children[i])) {
-              node.selected = node.children.some((child) => child.selected);
-              return true;
-            }
-          }
-        }
-
-        return false;
-      };
-
-      findAndToggle(state.fileNode);
+      toggleNodeSelection(state.fileNode, path, selected);
     },
     resetSelection(state) {
       if (!state.fileNode) {
         return;
       }
 
-      const payload = { path: state.fileNode.path, selected: false };
-      fileSlice.caseReducers.toggleFileNodeSelection(state, {
-        type: 'files/toggleFileNodeSelection',
-        payload,
-      });
+      toggleNodeSelection(state.fileNode, state.fileNode.path, false);
     },
     setDirectoryTree(state, action: PayloadAction<string>) {
       state.directoryTree = action.payload;
