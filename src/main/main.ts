@@ -17,13 +17,16 @@ import chokidar from 'chokidar';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import {
+  buildFileNode,
   buildFileNodeSingleLevel,
-  flattenFileNode,
   generateDirectoryStructure,
-  searchFileNode,
 } from './utils/FileBuilder';
 import { streamGetContent } from './utils/ContentAggregator';
-import { FileNode, FileNodeSchema, PathSchema } from '../types/FileNode';
+import { FileNode, FileNodeSchema } from '../types/FileNode';
+import {
+  FileNodeExpandSchema,
+  FileNodeSelectionSchema,
+} from '../types/FileNodeDto';
 import {
   readAppSettings,
   writeAppSettings,
@@ -32,6 +35,11 @@ import {
 import { FileContent } from '../types/FileContent';
 import TokenEstimator from './utils/TokenEstimator';
 import { ipcChannels } from '../shared/ipcChannels';
+import {
+  toggleFileNodeSelection,
+  searchFileNode,
+  flattenFileNode,
+} from '../shared/utils/FileNodeUtils';
 
 class AppUpdater {
   constructor() {
@@ -131,57 +139,102 @@ ipcMain.on('dialog:openDirectory', async () => {
 
 ipcMain.on('directory:expand', (event, arg) => {
   console.log('Expanding directory', arg);
-  // When expand, we will disocver the expanded node
-  // and add it to the watcher
-  // The arg is the path of the expanded node
-
-  // We wil search for the node in the rootFileNode
-  // And then we will expand (add it to the watcher), and make a call back to the renderer
-  // And the renderer will update the UI
 
   if (!mainWindow || !rootFileNode) {
     return;
   }
 
-  const parsedResult = PathSchema.safeParse(arg);
+  const parsedResult = FileNodeExpandSchema.safeParse(arg);
   if (!parsedResult.success) {
     return;
   }
 
-  const directoryPath = parsedResult.data;
+  const { path: directoryPath, expanded } = parsedResult.data;
 
-  console.log('Searching for target node', directoryPath);
-  const targetnode = searchFileNode(rootFileNode, directoryPath);
-
-  // if (!targetnode || targetnode.expanded) {
-  // TODO: Not sure if we want to collapse the directory if it's already expanded
-  if (!targetnode) {
+  if (!expanded) {
+    // TODO: Not sure if we should unwatch the directory and all children
+    unwatchDirectory(directoryPath);
     return;
   }
 
-  // Get the expanded version of the node with its children
-  const expandedNode = buildFileNodeSingleLevel(directoryPath);
+  const targetnode = searchFileNode(rootFileNode, directoryPath);
 
-  // Preserve selected state from the original node
-  if (targetnode.selected) {
-    expandedNode.selected = targetnode.selected;
+  if (!targetnode || targetnode.expanded) {
+    return;
   }
 
-  targetnode.children = expandedNode.children;
-  targetnode.loaded = true;
-
+  const expandedNode = buildFileNodeSingleLevel(directoryPath);
   watchDirectory(directoryPath);
 
+  targetnode.children = expandedNode.children;
+
+  // Should perhaps rename expand to 'join' or 'deepen'
   mainWindow.webContents.send(ipcChannels.DIRECTORY_EXPAND, {
     path: directoryPath,
     fileNode: expandedNode,
   });
 });
 
-ipcMain.on('directory:collapse', (event, arg) => {
-  console.log('Collapsing directory', arg);
-  // When collapse, we will remove the directory from the watcher
-  unwatchDirectory(arg);
+ipcMain.on('fileNode:select', (event, arg) => {
+  console.log('Selecting node', arg);
+
+  if (!mainWindow || !rootFileNode) {
+    return;
+  }
+
+  const parsedResult = FileNodeSelectionSchema.safeParse(arg);
+  if (!parsedResult.success) {
+    console.error('Error parsing file node selection', parsedResult.error);
+    return;
+  }
+
+  const { path: nodePath, selected } = parsedResult.data;
+
+  const targetNode = searchFileNode(rootFileNode, nodePath);
+
+  if (!targetNode) {
+    return;
+  }
+
+  let expandedNode: FileNode | null = null;
+  if (selected) {
+    expandedNode = buildFileNode(targetNode.path);
+    targetNode.children = expandedNode.children;
+    targetNode.expanded = true;
+  }
+
+  toggleFileNodeSelection(rootFileNode, nodePath, selected);
+  mainWindow.webContents.send('workspace:fileNode', rootFileNode);
+
+  mainWindow.webContents.send(ipcChannels.TOKEN_COUNT_SET, 0);
+  mainWindow.webContents.send(ipcChannels.FILE_CONTENTS_CLEAR);
+
+  const directoryTree = generateDirectoryStructure(rootFileNode, {
+    selectedOnly: true,
+  });
+  mainWindow.webContents.send(ipcChannels.DIRECTORY_TREE_SET, directoryTree);
+
+  let count = TokenEstimator.estimateTokens(directoryTree);
+  mainWindow.webContents.send(ipcChannels.TOKEN_COUNT_SET, count);
+
+  const flattenedNode = flattenFileNode(rootFileNode, {
+    selectedOnly: true,
+  });
+
+  streamGetContent(flattenedNode, (fileContents: FileContent[]) => {
+    if (!mainWindow) {
+      return;
+    }
+
+    for (let i = 0; i < fileContents.length; i += 1) {
+      const fileContent = fileContents[i];
+      count += TokenEstimator.estimateTokens(fileContent.content);
+    }
+
+    mainWindow.webContents.send(ipcChannels.TOKEN_COUNT_SET, count);
+
+    mainWindow.webContents.send(ipcChannels.FILE_CONTENTS_ADD, fileContents);
+  });
 });
 
 ipcMain.handle('stream:content', async (event, arg) => {

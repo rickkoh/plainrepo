@@ -24,9 +24,7 @@ export type FileNode = {
   selected?: boolean;
   lastSynced?: Date;
   children?: FileNode[];
-  content?: string;
-  loaded?: boolean;
-  error?: string;
+  expanded?: boolean;
 };
 
 // Type inference for an array of file nodes

@@ -10,6 +10,7 @@ export type Channels =
   | 'dialog:openDirectory'
   | 'workspace:path'
   | 'workspace:fileNode'
+  | 'fileNode:select'
   | 'stream:content'
   | 'stream:tokenCount'
   | 'stream:directoryTree'
