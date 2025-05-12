@@ -12,6 +12,14 @@ import { applyReplacements } from './Replacer';
 
 const fs = require('fs');
 
+/**
+ * Gets the content of a file
+ *
+ * @param path - The path of the file to get the content of
+ * @param transform - The transform to apply to the content
+ * @param maxSize - The maximum size of the content to return
+ * @returns The content of the file
+ */
 export function getContent(
   path: string,
   transform?: (output: string) => string,
@@ -35,6 +43,12 @@ export function getContent(
   return transform ? transform(rawContent) : rawContent;
 }
 
+/**
+ * Streams the content of a list of file nodes
+ *
+ * @param fileNodeList - The list of file nodes to stream the content of
+ * @param callback - The callback to call with the file content
+ */
 export function streamGetContent(
   fileNodeList: FileNode[],
   callback: (fileContent: FileContent[]) => void,
