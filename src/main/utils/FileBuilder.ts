@@ -197,8 +197,7 @@ export function buildFileNodeToPath(
     ) {
       const expandedNode = buildFileNodeSingleLevel(currentNode.path);
       if (expandedNode && expandedNode.children) {
-        currentNode.children = expandedNode.children;
-        currentNode.expanded = true; // Mark as expanded
+        Object.assign(currentNode, expandedNode);
       } else {
         return null;
       }

@@ -57,7 +57,7 @@ const fileSlice = createSlice({
           const currentNode = stack.pop();
           if (currentNode) {
             if (currentNode.path === path) {
-              currentNode.children = fileNode.children;
+              Object.assign(currentNode, fileNode);
               return true;
             }
 

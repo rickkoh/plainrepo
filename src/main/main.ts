@@ -169,7 +169,7 @@ ipcMain.on('directory:expand', (event, arg) => {
   const expandedNode = buildFileNodeSingleLevel(directoryPath);
   watchDirectory(directoryPath);
 
-  targetnode.children = expandedNode.children;
+  Object.assign(targetnode, expandedNode);
 
   // Should perhaps rename expand to 'join' or 'deepen'
   mainWindow.webContents.send(ipcChannels.DIRECTORY_EXPAND, {
@@ -205,8 +205,7 @@ ipcMain.on('fileNode:select', (event, arg) => {
   let expandedNode: FileNode | null = null;
   if (selected) {
     expandedNode = buildFileNode(targetNode.path);
-    targetNode.children = expandedNode.children;
-    targetNode.expanded = true;
+    Object.assign(targetNode, expandedNode);
   }
 
   toggleFileNodeSelection(rootFileNode, nodePath, selected);
