@@ -19,12 +19,15 @@ import { resolveHtmlPath } from './util';
 import {
   buildFileNode,
   buildFileNodeSingleLevel,
+  buildFileNodeToPath,
   generateDirectoryStructure,
+  searchFileSystem,
 } from './utils/FileBuilder';
 import { streamGetContent } from './utils/ContentAggregator';
 import { FileNode, FileNodeSchema } from '../types/FileNode';
 import {
   FileNodeExpandSchema,
+  FileNodeSearchSchema,
   FileNodeSelectionSchema,
 } from '../types/FileNodeDto';
 import {
@@ -190,10 +193,13 @@ ipcMain.on('fileNode:select', (event, arg) => {
 
   const { path: nodePath, selected } = parsedResult.data;
 
-  const targetNode = searchFileNode(rootFileNode, nodePath);
+  let targetNode = searchFileNode(rootFileNode, nodePath);
 
   if (!targetNode) {
-    return;
+    targetNode = buildFileNodeToPath(rootFileNode, nodePath);
+    if (!targetNode) {
+      return;
+    }
   }
 
   let expandedNode: FileNode | null = null;
@@ -235,6 +241,29 @@ ipcMain.on('fileNode:select', (event, arg) => {
 
     mainWindow.webContents.send(ipcChannels.FILE_CONTENTS_ADD, fileContents);
   });
+});
+
+ipcMain.handle('search:files', async (event, arg) => {
+  console.log('Searching for node', arg);
+  if (!rootDirectory) {
+    return { success: false, error: 'No workspace open' };
+  }
+
+  const parsedResult = FileNodeSearchSchema.safeParse(arg);
+  if (!parsedResult.success) {
+    return { success: false, error: 'Invalid search query' };
+  }
+
+  const search = parsedResult.data;
+
+  const result = await searchFileSystem(rootDirectory, search.searchTerm, {
+    maxResults: search.maxResults,
+    includeFiles: search.includeFiles,
+    includeDirs: search.includeDirs,
+    caseSensitive: search.caseSensitive,
+  });
+
+  return { success: true, result };
 });
 
 ipcMain.handle('stream:content', async (event, arg) => {

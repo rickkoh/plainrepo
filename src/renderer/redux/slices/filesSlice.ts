@@ -7,6 +7,8 @@ interface FileState {
   allIds: string[];
   fileNode?: FileNode;
   directoryTree?: string;
+  searchResults: FileNode[];
+  isSearching: boolean;
 }
 
 const initialState: FileState = {
@@ -14,6 +16,8 @@ const initialState: FileState = {
   allIds: [],
   fileNode: undefined,
   directoryTree: undefined,
+  searchResults: [],
+  isSearching: false,
 };
 
 const fileSlice = createSlice({
@@ -91,6 +95,17 @@ const fileSlice = createSlice({
     setDirectoryTree(state, action: PayloadAction<string>) {
       state.directoryTree = action.payload;
     },
+    setSearchResults(state, action: PayloadAction<FileNode[]>) {
+      state.searchResults = action.payload;
+    },
+
+    setIsSearching(state, action: PayloadAction<boolean>) {
+      state.isSearching = action.payload;
+    },
+
+    clearSearchResults(state) {
+      state.searchResults = [];
+    },
   },
 });
 
@@ -99,6 +114,9 @@ export const {
   toggleFileNodeSelection,
   resetSelection,
   setDirectoryTree,
+  setSearchResults,
+  setIsSearching,
+  clearSearchResults,
 } = fileSlice.actions;
 
 const filesReducer = fileSlice.reducer;

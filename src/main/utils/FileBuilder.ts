@@ -154,6 +154,74 @@ export function buildFileNodeSingleLevel(dirPath: string): FileNode {
 }
 
 /**
+ * Build the `fileNode` to the `targetPath` and returns the `targetFileNode`
+ *
+ * @param fileNode - The file node to build the file node to
+ * @param targetPath - The target path to build the file node to
+ * @returns The file node to the target path
+ */
+export function buildFileNodeToPath(
+  fileNode: FileNode,
+  targetPath: string,
+): FileNode | null {
+  if (fileNode.path === targetPath) {
+    return fileNode;
+  }
+
+  // Ensure targetPath starts with fileNode.path
+  if (!targetPath.startsWith(fileNode.path)) {
+    return null;
+  }
+
+  const relativePath = path.relative(fileNode.path, targetPath);
+  if (relativePath === '') {
+    return fileNode;
+  }
+
+  const pathComponents = relativePath
+    .split(path.sep)
+    .filter((p: string) => p !== '');
+
+  let currentNode: FileNode | null = fileNode;
+
+  for (let i = 0; i < pathComponents.length; i += 1) {
+    const component = pathComponents[i];
+    if (!currentNode || currentNode.type !== 'directory') {
+      return null;
+    }
+
+    if (
+      !currentNode.children ||
+      currentNode.children.length === 0 ||
+      !currentNode.expanded
+    ) {
+      const expandedNode = buildFileNodeSingleLevel(currentNode.path);
+      if (expandedNode && expandedNode.children) {
+        currentNode.children = expandedNode.children;
+        currentNode.expanded = true; // Mark as expanded
+      } else {
+        return null;
+      }
+    }
+
+    const nextNode: FileNode | undefined = currentNode.children?.find(
+      (child) => child.name === component,
+    );
+
+    if (!nextNode) {
+      return null;
+    }
+    currentNode = nextNode;
+  }
+
+  if (currentNode && currentNode.path === targetPath) {
+    return currentNode;
+  }
+
+  return null;
+}
+
+/**
  * Generate the directory structure from the file node
  *
  * @param fileNode The file node to generate the directory structure from
@@ -239,46 +307,56 @@ export function searchFileSystem(
     const searchDir = async (dirPath: string) => {
       if (results.length >= maxResults) return;
 
-      const entries = await fs.promises.readdir(dirPath, {
-        withFileTypes: true,
-      });
+      try {
+        const entries = await fs.promises.readdir(dirPath, {
+          withFileTypes: true,
+        });
 
-      entries.forEach(async (entry: Dirent) => {
-        if (results.length >= maxResults) return;
+        await Promise.all(
+          entries.map(async (entry: Dirent) => {
+            if (results.length >= maxResults) return;
 
-        if (shouldExclude(entry.name, excludeRegexes)) return;
+            if (shouldExclude(entry.name, excludeRegexes)) return;
 
-        const fullPath = path.join(dirPath, entry.name);
+            const fullPath = path.join(dirPath, entry.name);
 
-        // Check if this entry matches the search term
-        const matches = regex.test(entry.name);
+            // Check if this entry matches the search term
+            const matches = regex.test(entry.name);
 
-        if (entry.isDirectory()) {
-          if (matches && includeDirs) {
-            results.push({
-              name: entry.name,
-              path: fullPath,
-              type: 'directory',
-              children: [],
-              selected: false,
-            });
-          }
+            if (entry.isDirectory()) {
+              if (matches && includeDirs) {
+                results.push({
+                  name: entry.name,
+                  path: fullPath,
+                  type: 'directory',
+                  children: [],
+                  selected: false,
+                });
+              }
 
-          // Continue searching in this directory
-          await searchDir(fullPath);
-        } else if (entry.isFile() && matches && includeFiles) {
-          results.push({
-            name: entry.name,
-            path: fullPath,
-            type: 'file',
-            selected: false,
-          });
-        }
-      });
+              // Continue searching in this directory
+              await searchDir(fullPath);
+            } else if (entry.isFile() && matches && includeFiles) {
+              results.push({
+                name: entry.name,
+                path: fullPath,
+                type: 'file',
+                selected: false,
+              });
+            }
+          }),
+        );
+      } catch (err) {
+        console.error(`Error searching in directory ${dirPath}:`, err);
+      }
     };
 
     // Start the search
-    searchDir(rootDir);
-    resolve(results);
+    searchDir(rootDir)
+      .then(() => resolve(results))
+      .catch((err) => {
+        console.error('Search error:', err);
+        resolve(results);
+      });
   });
 }

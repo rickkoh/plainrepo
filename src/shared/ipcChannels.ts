@@ -10,6 +10,8 @@ export const ipcChannels = {
   DIRECTORY_EXPAND: 'directory:expand',
   DIRECTORY_COLLAPSE: 'directory:collapse',
 
+  FILE_NODE_SELECTION_CHANGED: 'fileNode:selectionChanged',
+
   // File contents
   FILE_CONTENTS_CLEAR: 'fileContents:clear',
   FILE_CONTENTS_ADD: 'fileContents:add',

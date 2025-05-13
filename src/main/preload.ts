@@ -4,6 +4,7 @@ import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
 import { FileNode } from '../types/FileNode';
 import { AppSettings } from '../types/AppSettings';
 import { IPCChannel } from '../shared/ipcChannels';
+import { FileNodeSearchDto } from '../types/FileNodeDto';
 
 export type Channels =
   | 'ipc-example'
@@ -44,6 +45,10 @@ const electronHandler = {
       ipcRenderer.invoke('appSettings:update', settings),
     streamContent: (fileNode: FileNode) =>
       ipcRenderer.invoke('stream:content', fileNode),
+    searchFiles: (
+      query: FileNodeSearchDto,
+    ): Promise<{ success: boolean; error?: string; result?: FileNode[] }> =>
+      ipcRenderer.invoke('search:files', query),
   },
 };
 

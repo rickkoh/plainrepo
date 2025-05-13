@@ -1,5 +1,4 @@
 import {
-  useMemo,
   useState,
   useCallback,
   useRef,
@@ -7,39 +6,40 @@ import {
   CSSProperties,
 } from 'react';
 import { cn } from '@/lib/utils';
-import { BaseFileNode, FileNode } from '@/src/types/FileNode';
 import { Checkbox } from '@/components/ui/checkbox';
-import { File, Folder } from 'lucide-react';
+import { File, Folder, Loader2 } from 'lucide-react';
 import { useDebounceCallback } from 'usehooks-ts';
 import { VariableSizeList as List } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
 
 import { useAppDispatch, useAppSelector } from '../redux/hooks';
-import { selectFileNode } from '../redux/selectors/filesSelectors';
-import { toggleFileNodeSelection } from '../redux/slices/filesSlice';
 import { selectWorkingDir } from '../redux/selectors/workspaceSelectors';
-
-interface MatchedFileNode extends BaseFileNode {
-  indexPath: number[];
-}
 
 const ITEM_HEIGHT = 36;
 
 export default function Search() {
   const workingDir = useAppSelector(selectWorkingDir);
+  const searchResults = useAppSelector((state) => state.files.searchResults);
+  const isSearching = useAppSelector((state) => state.files.isSearching);
 
   const dispatch = useAppDispatch();
-  const fileNode = useAppSelector(selectFileNode);
   const listRef = useRef<List>(null);
 
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
-
   const [showFiles, setShowFiles] = useState<boolean>(true);
   const [showFolders, setShowFolders] = useState<boolean>(true);
 
   const debouncedSearch = useDebounceCallback((value: string) => {
-    setDebouncedSearchQuery(value);
+    if (value.trim() && workingDir) {
+      dispatch({
+        type: 'search/searchFiles',
+        payload: {
+          searchTerm: value,
+          includeFiles: showFiles,
+          includeDirs: showFolders,
+        },
+      });
+    }
   }, 300);
 
   const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -48,53 +48,15 @@ export default function Search() {
     debouncedSearch(value);
   };
 
-  const filteredNodes = useMemo(() => {
-    if (
-      !debouncedSearchQuery ||
-      debouncedSearchQuery.trim() === '' ||
-      !fileNode
-    ) {
-      return [];
-    }
-
-    const matchingNodes: MatchedFileNode[] = [];
-
-    const buildMatchingNodes = (node: FileNode, indexPath: number[]) => {
-      if (!node.children) {
-        return;
-      }
-      node.children.forEach((child, i) => {
-        const childPath = [...indexPath, i];
-        if (
-          child.name
-            .toLowerCase()
-            .includes(debouncedSearchQuery.toLowerCase()) &&
-          ((child.type === 'directory' && showFolders) ||
-            (child.type === 'file' && showFiles))
-        ) {
-          const matchedNode: MatchedFileNode = {
-            ...child,
-            indexPath: childPath,
-          };
-          matchingNodes.push(matchedNode);
-        }
-        buildMatchingNodes(child, childPath);
-      });
-    };
-
-    buildMatchingNodes(fileNode, []);
-    return matchingNodes;
-  }, [fileNode, debouncedSearchQuery, showFiles, showFolders]);
-
   const getItemKey = useCallback(
-    (index: number) => filteredNodes[index]?.path || index.toString(),
-    [filteredNodes],
+    (index: number) => searchResults[index]?.path || index.toString(),
+    [searchResults],
   );
 
   const ItemRenderer = useCallback(
     // eslint-disable-next-line react/no-unused-prop-types
     ({ index, style }: { index: number; style: CSSProperties }) => {
-      const matchedNode = filteredNodes[index];
+      const matchedNode = searchResults[index];
       if (!matchedNode) return null;
 
       return (
@@ -106,12 +68,10 @@ export default function Search() {
             id={matchedNode.path}
             checked={matchedNode.selected}
             onCheckedChange={(checked) => {
-              dispatch(
-                toggleFileNodeSelection({
-                  path: matchedNode.path,
-                  selected: checked === true,
-                }),
-              );
+              window.electron.ipcRenderer.sendMessage('fileNode:select', {
+                path: matchedNode.path,
+                selected: checked === true,
+              });
             }}
           />
           <label htmlFor={matchedNode.path}>{matchedNode.name}</label>
@@ -121,13 +81,86 @@ export default function Search() {
             <File size={16} className="shrink-0 text-muted-foreground" />
           )}
           <p className="text-sm text-muted-foreground">
-            {matchedNode.path.slice(workingDir?.length)}
+            {workingDir
+              ? matchedNode.path.slice(workingDir.length)
+              : matchedNode.path}
           </p>
         </div>
       );
     },
-    [filteredNodes, workingDir, dispatch],
+    [searchResults, workingDir],
   );
+
+  const handleShowFilesToggle = () => {
+    const newValue = !showFiles;
+    setShowFiles(newValue);
+
+    if (searchQuery.trim()) {
+      dispatch({
+        type: 'search/searchFiles',
+        payload: {
+          searchTerm: searchQuery,
+          includeFiles: newValue,
+          includeDirs: showFolders,
+        },
+      });
+    }
+  };
+
+  const handleShowFoldersToggle = () => {
+    const newValue = !showFolders;
+    setShowFolders(newValue);
+
+    if (searchQuery.trim()) {
+      dispatch({
+        type: 'search/searchFiles',
+        payload: {
+          searchTerm: searchQuery,
+          includeFiles: showFiles,
+          includeDirs: newValue,
+        },
+      });
+    }
+  };
+
+  const renderSearchContent = () => {
+    if (isSearching) {
+      return (
+        <div className="flex items-center justify-center h-full">
+          <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          <span className="ml-2 text-sm">Searching...</span>
+        </div>
+      );
+    }
+
+    if (!searchQuery.trim()) {
+      return <p className="px-4 text-sm">Enter a search term</p>;
+    }
+
+    if (!searchResults?.length) {
+      return <p className="px-4 text-sm">No results found</p>;
+    }
+
+    return (
+      <div className="h-full w-full">
+        <AutoSizer>
+          {({ height, width }) => (
+            <List
+              ref={listRef}
+              height={height}
+              width={width}
+              itemCount={searchResults.length}
+              itemSize={() => ITEM_HEIGHT}
+              itemKey={getItemKey}
+              overscanCount={5}
+            >
+              {ItemRenderer}
+            </List>
+          )}
+        </AutoSizer>
+      </div>
+    );
+  };
 
   return (
     <div className="flex flex-col w-full h-full py-4 space-y-2">
@@ -147,7 +180,7 @@ export default function Search() {
             'text-sm border-b border-muted-foreground text-muted-foreground',
             showFiles && 'text-foreground border-foreground',
           )}
-          onClick={() => setShowFiles(!showFiles)}
+          onClick={handleShowFilesToggle}
         >
           Files
         </button>
@@ -157,34 +190,12 @@ export default function Search() {
             'text-sm border-b border-muted-foreground text-muted-foreground',
             showFolders && 'text-foreground border-foreground',
           )}
-          onClick={() => setShowFolders(!showFolders)}
+          onClick={handleShowFoldersToggle}
         >
           Folders
         </button>
       </div>
-      <div className="flex-1">
-        {filteredNodes && filteredNodes.length > 0 ? (
-          <div className="h-full w-full">
-            <AutoSizer>
-              {({ height, width }) => (
-                <List
-                  ref={listRef}
-                  height={height}
-                  width={width}
-                  itemCount={filteredNodes.length}
-                  itemSize={() => ITEM_HEIGHT}
-                  itemKey={getItemKey}
-                  overscanCount={5}
-                >
-                  {ItemRenderer}
-                </List>
-              )}
-            </AutoSizer>
-          </div>
-        ) : (
-          <p className="px-4 text-sm">No results found</p>
-        )}
-      </div>
+      <div className="flex-1">{renderSearchContent()}</div>
     </div>
   );
 }

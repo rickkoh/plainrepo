@@ -2,6 +2,7 @@ import { Dispatch, Middleware, UnknownAction } from 'redux';
 import { ipcChannels } from '@/src/shared/ipcChannels';
 
 import { RootState } from './rootReducer';
+import { setSearchResults, setIsSearching } from './slices/filesSlice';
 
 // This middleware intercepts actions that need to communicate with Electron
 // Renderer => Main
@@ -28,6 +29,41 @@ const electronMiddleware: Middleware<{}, RootState, Dispatch<UnknownAction>> =
         window.electron.ipcRenderer.sendMessage(
           ipcChannels.DIALOG_OPEN_DIRECTORY,
         );
+        break;
+      }
+
+      case 'files/resetSelection': {
+        // Clear file contents when selection is reset
+        store.dispatch({ type: 'fileContents/clearFileContents' });
+        break;
+      }
+
+      // New handler for search action
+      case 'search/searchFiles': {
+        const query = (unknownAction as any).payload;
+
+        if (query && query.searchTerm) {
+          store.dispatch(setIsSearching(true));
+
+          // Use IIFE to suppress 'unused promise' warnings
+          (async () => {
+            try {
+              const response =
+                await window.electron.ipcRenderer.searchFiles(query);
+              if (response.success && response.result) {
+                store.dispatch(setSearchResults(response.result));
+              } else {
+                console.error('Search failed:', response.error);
+                store.dispatch(setSearchResults([]));
+              }
+            } catch (err) {
+              console.error('Search error:', err);
+              store.dispatch(setSearchResults([]));
+            } finally {
+              store.dispatch(setIsSearching(false));
+            }
+          })();
+        }
         break;
       }
 
