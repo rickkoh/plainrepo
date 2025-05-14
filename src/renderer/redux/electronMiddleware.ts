@@ -108,6 +108,16 @@ export const setupElectronListeners = (store: any) => {
     },
   );
 
+  window.electron.ipcRenderer.on(
+    ipcChannels.FILE_NODE_SELECTION_CHANGED,
+    (changes: unknown) => {
+      store.dispatch({
+        type: 'files/toggleFileNodeSelection',
+        payload: changes,
+      });
+    },
+  );
+
   // File content events
   window.electron.ipcRenderer.on(ipcChannels.FILE_CONTENTS_CLEAR, () => {
     store.dispatch({ type: 'fileContents/clearFileContents' });

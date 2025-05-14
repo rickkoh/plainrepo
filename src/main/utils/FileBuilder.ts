@@ -158,24 +158,29 @@ export function buildFileNodeSingleLevel(dirPath: string): FileNode {
  *
  * @param fileNode - The file node to build the file node to
  * @param targetPath - The target path to build the file node to
- * @returns The file node to the target path
+ * @returns Object containing the target node and array of expanded paths with their nodes
  */
 export function buildFileNodeToPath(
   fileNode: FileNode,
   targetPath: string,
-): FileNode | null {
+): {
+  node: FileNode | null;
+  expandedPaths: Array<{ path: string; node: FileNode }>;
+} {
+  const expandedPaths: Array<{ path: string; node: FileNode }> = [];
+
   if (fileNode.path === targetPath) {
-    return fileNode;
+    return { node: fileNode, expandedPaths };
   }
 
   // Ensure targetPath starts with fileNode.path
   if (!targetPath.startsWith(fileNode.path)) {
-    return null;
+    return { node: null, expandedPaths };
   }
 
   const relativePath = path.relative(fileNode.path, targetPath);
   if (relativePath === '') {
-    return fileNode;
+    return { node: fileNode, expandedPaths };
   }
 
   const pathComponents = relativePath
@@ -187,7 +192,7 @@ export function buildFileNodeToPath(
   for (let i = 0; i < pathComponents.length; i += 1) {
     const component = pathComponents[i];
     if (!currentNode || currentNode.type !== 'directory') {
-      return null;
+      return { node: null, expandedPaths };
     }
 
     if (
@@ -198,8 +203,9 @@ export function buildFileNodeToPath(
       const expandedNode = buildFileNodeSingleLevel(currentNode.path);
       if (expandedNode && expandedNode.children) {
         Object.assign(currentNode, expandedNode);
+        expandedPaths.push({ path: currentNode.path, node: currentNode });
       } else {
-        return null;
+        return { node: null, expandedPaths };
       }
     }
 
@@ -208,16 +214,16 @@ export function buildFileNodeToPath(
     );
 
     if (!nextNode) {
-      return null;
+      return { node: null, expandedPaths };
     }
     currentNode = nextNode;
   }
 
   if (currentNode && currentNode.path === targetPath) {
-    return currentNode;
+    return { node: currentNode, expandedPaths };
   }
 
-  return null;
+  return { node: null, expandedPaths };
 }
 
 /**

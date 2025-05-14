@@ -116,6 +116,19 @@ export function toggleFileNodeSelection(
   return findAndToggle(rootNode);
 }
 
+export function toggleFlatFileNodeSelection(
+  fileNodeList: FileNode[],
+  targetPath: string,
+  selected: boolean,
+) {
+  for (let i = 0; i < fileNodeList.length; i += 1) {
+    const fileNode = fileNodeList[i];
+    if (targetPath.includes(fileNode.path)) {
+      fileNode.selected = selected;
+    }
+  }
+}
+
 /**
  * Resets selection for all nodes in the tree
  *

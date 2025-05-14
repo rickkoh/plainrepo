@@ -87,7 +87,8 @@ Big changes:
   ☐ Change to use react-window
   ✔ Change to use redux (kiv) @done(25-05-10 18:34)
   ☐ Implement file discovery to watch lesser files
-    ☐ Discover files level by level
+    ✔ Discover files level by level @done(25-05-14 21:00)
+    ☐ Reflect state in UI (explorer and search)
     ☐ Use chokidar to watch for file changes
 
 Optimisations:

@@ -196,7 +196,21 @@ ipcMain.on('fileNode:select', (event, arg) => {
   let targetNode = searchFileNode(rootFileNode, nodePath);
 
   if (!targetNode) {
-    targetNode = buildFileNodeToPath(rootFileNode, nodePath);
+    const result = buildFileNodeToPath(rootFileNode, nodePath);
+
+    targetNode = result.node;
+
+    result.expandedPaths.forEach(({ path: expandedPath, node }) => {
+      if (!mainWindow) {
+        return;
+      }
+
+      mainWindow.webContents.send(ipcChannels.DIRECTORY_EXPAND, {
+        path: expandedPath,
+        fileNode: node,
+      });
+    });
+
     if (!targetNode) {
       return;
     }
@@ -206,10 +220,18 @@ ipcMain.on('fileNode:select', (event, arg) => {
   if (selected) {
     expandedNode = buildFileNode(targetNode.path);
     Object.assign(targetNode, expandedNode);
+    mainWindow.webContents.send(ipcChannels.DIRECTORY_EXPAND, {
+      path: targetNode.path,
+      fileNode: expandedNode,
+    });
   }
 
   toggleFileNodeSelection(rootFileNode, nodePath, selected);
-  mainWindow.webContents.send('workspace:fileNode', rootFileNode);
+  mainWindow.webContents.send(ipcChannels.FILE_NODE_SELECTION_CHANGED, {
+    path: targetNode.path,
+    selected,
+  });
+  // mainWindow.webContents.send('workspace:fileNode', rootFileNode);
 
   mainWindow.webContents.send(ipcChannels.TOKEN_COUNT_SET, 0);
   mainWindow.webContents.send(ipcChannels.FILE_CONTENTS_CLEAR);

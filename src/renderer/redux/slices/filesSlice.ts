@@ -1,6 +1,9 @@
 import { FileNode } from '@/src/types/FileNode';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { toggleFileNodeSelection as toggleNodeSelection } from '@/src/shared/utils/FileNodeUtils';
+import {
+  toggleFlatFileNodeSelection,
+  toggleFileNodeSelection as toggleNodeSelection,
+} from '@/src/shared/utils/FileNodeUtils';
 
 interface FileState {
   byId: Record<string, string>;
@@ -50,7 +53,7 @@ const fileSlice = createSlice({
 
       if (!state.fileNode) return;
 
-      const findAndUpdateNode = (root: FileNode) => {
+      const findAndUpdateNode = (root: FileNode): boolean => {
         const stack: FileNode[] = [root];
 
         while (stack.length > 0) {
@@ -84,6 +87,7 @@ const fileSlice = createSlice({
       if (!state.fileNode) return;
 
       toggleNodeSelection(state.fileNode, path, selected);
+      toggleFlatFileNodeSelection(state.searchResults, path, selected);
     },
     resetSelection(state) {
       if (!state.fileNode) {
