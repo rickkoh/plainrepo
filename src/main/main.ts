@@ -13,6 +13,7 @@ import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import chokidar from 'chokidar';
+import fs from 'fs';
 
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
@@ -59,16 +60,47 @@ let activeWatcher: any = null;
 let rootFileNode: FileNode | null = null;
 let rootDirectory: string | null = null;
 const expandedDirectories = new Set<string>();
+const pathWatchers = new Map<string, any>();
 
 // Helper function to add directories to watcher
-function watchDirectory(dirPath: string) {
+function watchDirectory(dirPath: string, depth?: number) {
   if (!activeWatcher) return;
 
-  console.log('Adding directory to watch:', dirPath);
+  console.log(
+    'Adding directory to watch:',
+    dirPath,
+    depth !== undefined ? `at depth ${depth}` : '',
+  );
   expandedDirectories.add(dirPath);
 
-  // Add this directory to the watcher
-  activeWatcher.add(dirPath);
+  // Add this directory to the watcher with specific options when depth is provided
+  if (depth !== undefined) {
+    // For specific depth watching, we need a new watcher instance for this path
+    const appSettings = readAppSettings();
+    const excludeList = appSettings.exclude || [];
+
+    const pathWatcher = chokidar.watch(dirPath, {
+      ignored: globToRegex(excludeList),
+      persistent: true,
+      ignoreInitial: true,
+      awaitWriteFinish: true,
+      depth,
+    }) as any;
+
+    // Copy all event handlers from the main watcher to this path-specific watcher
+    ['add', 'change', 'unlink', 'addDir', 'unlinkDir'].forEach((eventName) => {
+      const listeners = (activeWatcher as any).listeners(eventName);
+      listeners.forEach((listener: (path: string) => void) => {
+        pathWatcher.on(eventName, listener);
+      });
+    });
+
+    // Store this watcher to prevent garbage collection
+    pathWatchers.set(dirPath, pathWatcher);
+  } else {
+    // Default behavior - just add to the main watcher (depth: 0)
+    activeWatcher.add(dirPath);
+  }
 }
 
 // Helper function to remove directories from watcher
@@ -78,8 +110,15 @@ function unwatchDirectory(dirPath: string) {
   console.log('Removing directory from watch:', dirPath);
   expandedDirectories.delete(dirPath);
 
-  // Remove this directory from the watcher
-  activeWatcher.unwatch(dirPath);
+  // Check if we have a specific watcher for this path
+  if (pathWatchers.has(dirPath)) {
+    const pathWatcher = pathWatchers.get(dirPath);
+    pathWatcher.close();
+    pathWatchers.delete(dirPath);
+  } else {
+    // Default behavior - unwatch from the main watcher
+    activeWatcher.unwatch(dirPath);
+  }
 }
 
 ipcMain.on('ipc-example', async (event, arg) => {
@@ -122,10 +161,254 @@ ipcMain.on('dialog:openDirectory', async () => {
     depth: 0,
   });
 
-  // TODO: Add active watcher listeners here
-  // activeWatcher.on('add', (path) => {
-  //   console.log('add', path);
-  // });
+  // Add file watcher listeners
+  activeWatcher.on('add', (filePath: string) => {
+    if (!rootFileNode || !mainWindow) return;
+
+    const dirPath = path.dirname(filePath);
+    const parentNode = searchFileNode(rootFileNode, dirPath);
+
+    if (parentNode && parentNode.expanded && parentNode.children) {
+      const fileName = path.basename(filePath);
+
+      // Check if file already exists in the children array to avoid duplicates
+      const existingFileIndex = parentNode.children.findIndex(
+        (child) => child.path === filePath || child.name === fileName,
+      );
+
+      // If file exists, remove it first to avoid duplicates
+      if (existingFileIndex !== -1) {
+        parentNode.children.splice(existingFileIndex, 1);
+      }
+
+      // Add the new file to the parent node
+      const stats = fs.statSync(filePath);
+      const isDirectory = stats.isDirectory();
+
+      const newNode: FileNode = {
+        name: fileName,
+        path: filePath,
+        type: isDirectory ? 'directory' : 'file',
+        selected: false,
+        expanded: false,
+        ...(isDirectory ? { children: [] } : {}),
+      };
+
+      parentNode.children.push(newNode);
+      mainWindow.webContents.send(ipcChannels.FILE_NODE_UPDATE, {
+        path: dirPath,
+        fileNode: parentNode,
+      });
+    }
+  });
+
+  activeWatcher.on('unlink', (filePath: string) => {
+    if (!rootFileNode || !mainWindow) return;
+
+    const dirPath = path.dirname(filePath);
+    const parentNode = searchFileNode(rootFileNode, dirPath);
+
+    if (parentNode && parentNode.expanded && parentNode.children) {
+      const fileName = path.basename(filePath);
+      parentNode.children = parentNode.children.filter(
+        (child) => child.name !== fileName,
+      );
+
+      toggleFileNodeSelection(rootFileNode, dirPath, false);
+
+      mainWindow.webContents.send(ipcChannels.FILE_NODE_UPDATE, {
+        path: dirPath,
+        fileNode: parentNode,
+      });
+
+      mainWindow.webContents.send(ipcChannels.TOKEN_COUNT_SET, 0);
+      mainWindow.webContents.send(ipcChannels.FILE_CONTENTS_CLEAR);
+
+      const directoryTree = generateDirectoryStructure(rootFileNode, {
+        selectedOnly: true,
+      });
+      mainWindow.webContents.send(
+        ipcChannels.DIRECTORY_TREE_SET,
+        directoryTree,
+      );
+
+      let count = TokenEstimator.estimateTokens(directoryTree);
+      mainWindow.webContents.send(ipcChannels.TOKEN_COUNT_SET, count);
+
+      const flattenedNode = flattenFileNode(rootFileNode, {
+        selectedOnly: true,
+      });
+
+      streamGetContent(flattenedNode, (fileContents: FileContent[]) => {
+        if (!mainWindow) {
+          return;
+        }
+
+        for (let i = 0; i < fileContents.length; i += 1) {
+          const fileContent = fileContents[i];
+          count += TokenEstimator.estimateTokens(fileContent.content);
+        }
+
+        mainWindow.webContents.send(ipcChannels.TOKEN_COUNT_SET, count);
+
+        mainWindow.webContents.send(
+          ipcChannels.FILE_CONTENTS_ADD,
+          fileContents,
+        );
+      });
+    }
+  });
+
+  activeWatcher.on('change', (filePath: string) => {
+    if (!rootFileNode || !mainWindow) return;
+
+    // For file content changes, check if the file is selected
+    const fileNode = searchFileNode(rootFileNode, filePath);
+    if (fileNode && fileNode.selected) {
+      // Read the file content
+      try {
+        const content = fs.readFileSync(filePath, 'utf8');
+        const fileContents = [{ path: filePath, content }];
+
+        // Update the UI with the new content
+        mainWindow.webContents.send(
+          ipcChannels.FILE_CONTENTS_ADD,
+          fileContents,
+        );
+      } catch (err) {
+        console.error('Error reading changed file:', err);
+      }
+
+      mainWindow.webContents.send(ipcChannels.TOKEN_COUNT_SET, 0);
+      mainWindow.webContents.send(ipcChannels.FILE_CONTENTS_CLEAR);
+
+      const directoryTree = generateDirectoryStructure(rootFileNode, {
+        selectedOnly: true,
+      });
+      mainWindow.webContents.send(
+        ipcChannels.DIRECTORY_TREE_SET,
+        directoryTree,
+      );
+
+      let count = TokenEstimator.estimateTokens(directoryTree);
+      mainWindow.webContents.send(ipcChannels.TOKEN_COUNT_SET, count);
+
+      const flattenedNode = flattenFileNode(rootFileNode, {
+        selectedOnly: true,
+      });
+
+      streamGetContent(flattenedNode, (fileContents: FileContent[]) => {
+        if (!mainWindow) {
+          return;
+        }
+
+        for (let i = 0; i < fileContents.length; i += 1) {
+          const fileContent = fileContents[i];
+          count += TokenEstimator.estimateTokens(fileContent.content);
+        }
+
+        mainWindow.webContents.send(ipcChannels.TOKEN_COUNT_SET, count);
+
+        mainWindow.webContents.send(
+          ipcChannels.FILE_CONTENTS_ADD,
+          fileContents,
+        );
+      });
+    }
+  });
+
+  activeWatcher.on('addDir', (dirPath: string) => {
+    if (!rootFileNode || !mainWindow) return;
+
+    const parentPath = path.dirname(dirPath);
+    const parentNode = searchFileNode(rootFileNode, parentPath);
+
+    if (parentNode && parentNode.expanded && parentNode.children) {
+      const dirName = path.basename(dirPath);
+
+      // Check if directory already exists in the children array to avoid duplicates
+      const existingDirIndex = parentNode.children.findIndex(
+        (child) => child.path === dirPath || child.name === dirName,
+      );
+
+      // If directory exists, remove it first to avoid duplicates
+      if (existingDirIndex !== -1) {
+        parentNode.children.splice(existingDirIndex, 1);
+      }
+
+      const newNode: FileNode = {
+        name: dirName,
+        path: dirPath,
+        type: 'directory',
+        expanded: false,
+        children: [],
+        selected: false,
+      };
+
+      parentNode.children.push(newNode);
+      mainWindow.webContents.send(ipcChannels.FILE_NODE_UPDATE, {
+        path: parentPath,
+        fileNode: parentNode,
+      });
+    }
+  });
+
+  activeWatcher.on('unlinkDir', (dirPath: string) => {
+    if (!rootFileNode || !mainWindow) return;
+
+    const parentPath = path.dirname(dirPath);
+    const parentNode = searchFileNode(rootFileNode, parentPath);
+
+    if (parentNode && parentNode.expanded && parentNode.children) {
+      const dirName = path.basename(dirPath);
+      parentNode.children = parentNode.children.filter(
+        (child) => child.name !== dirName,
+      );
+
+      toggleFileNodeSelection(rootFileNode, dirPath, false);
+
+      mainWindow.webContents.send(ipcChannels.FILE_NODE_UPDATE, {
+        path: parentPath,
+        fileNode: parentNode,
+      });
+
+      mainWindow.webContents.send(ipcChannels.TOKEN_COUNT_SET, 0);
+      mainWindow.webContents.send(ipcChannels.FILE_CONTENTS_CLEAR);
+
+      const directoryTree = generateDirectoryStructure(rootFileNode, {
+        selectedOnly: true,
+      });
+      mainWindow.webContents.send(
+        ipcChannels.DIRECTORY_TREE_SET,
+        directoryTree,
+      );
+
+      let count = TokenEstimator.estimateTokens(directoryTree);
+      mainWindow.webContents.send(ipcChannels.TOKEN_COUNT_SET, count);
+
+      const flattenedNode = flattenFileNode(rootFileNode, {
+        selectedOnly: true,
+      });
+
+      streamGetContent(flattenedNode, (fileContents: FileContent[]) => {
+        if (!mainWindow) {
+          return;
+        }
+
+        for (let i = 0; i < fileContents.length; i += 1) {
+          const fileContent = fileContents[i];
+          count += TokenEstimator.estimateTokens(fileContent.content);
+        }
+
+        mainWindow.webContents.send(ipcChannels.TOKEN_COUNT_SET, count);
+
+        mainWindow.webContents.send(
+          ipcChannels.FILE_CONTENTS_ADD,
+          fileContents,
+        );
+      });
+    }
+  });
 
   mainWindow.webContents.send('workspace:path', selectedPath);
 
@@ -209,6 +492,8 @@ ipcMain.on('fileNode:select', (event, arg) => {
         path: expandedPath,
         fileNode: node,
       });
+
+      watchDirectory(expandedPath);
     });
 
     if (!targetNode) {
@@ -224,6 +509,8 @@ ipcMain.on('fileNode:select', (event, arg) => {
       path: targetNode.path,
       fileNode: expandedNode,
     });
+
+    watchDirectory(targetNode.path, Infinity);
   }
 
   toggleFileNodeSelection(rootFileNode, nodePath, selected);
@@ -231,7 +518,6 @@ ipcMain.on('fileNode:select', (event, arg) => {
     path: targetNode.path,
     selected,
   });
-  // mainWindow.webContents.send('workspace:fileNode', rootFileNode);
 
   mainWindow.webContents.send(ipcChannels.TOKEN_COUNT_SET, 0);
   mainWindow.webContents.send(ipcChannels.FILE_CONTENTS_CLEAR);

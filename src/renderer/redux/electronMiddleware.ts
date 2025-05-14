@@ -2,7 +2,11 @@ import { Dispatch, Middleware, UnknownAction } from 'redux';
 import { ipcChannels } from '@/src/shared/ipcChannels';
 
 import { RootState } from './rootReducer';
-import { setSearchResults, setIsSearching } from './slices/filesSlice';
+import {
+  setSearchResults,
+  setIsSearching,
+  setLastSearchQuery,
+} from './slices/filesSlice';
 
 // This middleware intercepts actions that need to communicate with Electron
 // Renderer => Main
@@ -43,6 +47,7 @@ const electronMiddleware: Middleware<{}, RootState, Dispatch<UnknownAction>> =
         const query = (unknownAction as any).payload;
 
         if (query && query.searchTerm) {
+          store.dispatch(setLastSearchQuery(query));
           store.dispatch(setIsSearching(true));
 
           // Use IIFE to suppress 'unused promise' warnings
@@ -75,6 +80,18 @@ const electronMiddleware: Middleware<{}, RootState, Dispatch<UnknownAction>> =
     return result;
   };
 
+// Helper function to re-run the last search if there's an active one
+const maybeRerunSearch = (store: any) => {
+  const { files } = store.getState();
+  const { lastSearchQuery, searchResults } = files;
+
+  // If we have a previous search query and there are search results,
+  // re-run the search to update the results
+  if (lastSearchQuery && searchResults.length > 0) {
+    store.dispatch({ type: 'search/searchFiles', payload: lastSearchQuery });
+  }
+};
+
 // Set up listeners for IPC events from Electron
 // Listens and dispatches actions to the store
 // Actions types are {sliceName}/{actionName}
@@ -97,6 +114,10 @@ export const setupElectronListeners = (store: any) => {
         payload: fileNode,
       });
       store.dispatch({ type: 'files/setFileNode', payload: fileNode });
+
+      // Reset search results when workspace changes
+      store.dispatch(setLastSearchQuery(null));
+      store.dispatch(setSearchResults([]));
     },
   );
 
@@ -105,6 +126,9 @@ export const setupElectronListeners = (store: any) => {
     ipcChannels.FILE_NODE_UPDATE,
     (updatedNode: unknown) => {
       store.dispatch({ type: 'files/updateFileNode', payload: updatedNode });
+
+      // Re-run search if we have an active search
+      maybeRerunSearch(store);
     },
   );
 

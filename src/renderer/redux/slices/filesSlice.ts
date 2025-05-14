@@ -12,6 +12,7 @@ interface FileState {
   directoryTree?: string;
   searchResults: FileNode[];
   isSearching: boolean;
+  lastSearchQuery: { searchTerm: string; [key: string]: any } | null;
 }
 
 const initialState: FileState = {
@@ -21,6 +22,7 @@ const initialState: FileState = {
   directoryTree: undefined,
   searchResults: [],
   isSearching: false,
+  lastSearchQuery: null,
 };
 
 const fileSlice = createSlice({
@@ -28,14 +30,7 @@ const fileSlice = createSlice({
   initialState,
   reducers: {
     setFileNode(state, action: PayloadAction<FileNode>) {
-      // Might need to have a middleware here to calling streaming of the content
       state.fileNode = action.payload;
-      // The idea is that once we open up the directory, the filenode (only the root) is created
-      // Then the rest of the filenode we have to apppend as we discover
-      // Discover == Expand || Search || Select
-      // Expand -> Open only the next level of the directory
-      // Search -> Expand only to the level of the searched file
-      // Select -> Recursively expand all children of the selected node
     },
     updateFileNode(
       state,
@@ -94,13 +89,17 @@ const fileSlice = createSlice({
     setSearchResults(state, action: PayloadAction<FileNode[]>) {
       state.searchResults = action.payload;
     },
-
     setIsSearching(state, action: PayloadAction<boolean>) {
       state.isSearching = action.payload;
     },
-
     clearSearchResults(state) {
       state.searchResults = [];
+    },
+    setLastSearchQuery(
+      state,
+      action: PayloadAction<{ searchTerm: string; [key: string]: any } | null>,
+    ) {
+      state.lastSearchQuery = action.payload;
     },
   },
 });
@@ -114,6 +113,7 @@ export const {
   setSearchResults,
   setIsSearching,
   clearSearchResults,
+  setLastSearchQuery,
 } = fileSlice.actions;
 
 const filesReducer = fileSlice.reducer;

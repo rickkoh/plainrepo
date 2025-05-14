@@ -88,7 +88,7 @@ Big changes:
   ✔ Change to use redux (kiv) @done(25-05-10 18:34)
   ☐ Implement file discovery to watch lesser files
     ✔ Discover files level by level @done(25-05-14 21:00)
-    ☐ Reflect state in UI (explorer and search)
+    ✔ Reflect state in UI (explorer and search) @done(25-05-15 00:39)
     ☐ Use chokidar to watch for file changes
 
 Optimisations:
