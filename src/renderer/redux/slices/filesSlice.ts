@@ -41,14 +41,6 @@ const fileSlice = createSlice({
       state,
       action: PayloadAction<{ path: string; fileNode: FileNode }>,
     ) {
-      // Have to find the node in the fileNode tree
-      // And then replaces/updates the node with the new node
-      state.fileNode = action.payload.fileNode;
-    },
-    expandDirectory(
-      state,
-      action: PayloadAction<{ path: string; fileNode: FileNode }>,
-    ) {
       const { path, fileNode } = action.payload;
 
       if (!state.fileNode) return;
@@ -115,6 +107,7 @@ const fileSlice = createSlice({
 
 export const {
   setFileNode,
+  updateFileNode,
   toggleFileNodeSelection,
   resetSelection,
   setDirectoryTree,

@@ -140,8 +140,8 @@ ipcMain.on('dialog:openDirectory', async () => {
   return null;
 });
 
-ipcMain.on('directory:expand', (event, arg) => {
-  console.log('Expanding directory', arg);
+ipcMain.on('fileNode:update', (event, arg) => {
+  console.log('Updating file node', arg);
 
   if (!mainWindow || !rootFileNode) {
     return;
@@ -172,7 +172,7 @@ ipcMain.on('directory:expand', (event, arg) => {
   Object.assign(targetnode, expandedNode);
 
   // Should perhaps rename expand to 'join' or 'deepen'
-  mainWindow.webContents.send(ipcChannels.DIRECTORY_EXPAND, {
+  mainWindow.webContents.send(ipcChannels.FILE_NODE_UPDATE, {
     path: directoryPath,
     fileNode: expandedNode,
   });
@@ -205,7 +205,7 @@ ipcMain.on('fileNode:select', (event, arg) => {
         return;
       }
 
-      mainWindow.webContents.send(ipcChannels.DIRECTORY_EXPAND, {
+      mainWindow.webContents.send(ipcChannels.FILE_NODE_UPDATE, {
         path: expandedPath,
         fileNode: node,
       });
@@ -220,7 +220,7 @@ ipcMain.on('fileNode:select', (event, arg) => {
   if (selected) {
     expandedNode = buildFileNode(targetNode.path);
     Object.assign(targetNode, expandedNode);
-    mainWindow.webContents.send(ipcChannels.DIRECTORY_EXPAND, {
+    mainWindow.webContents.send(ipcChannels.FILE_NODE_UPDATE, {
       path: targetNode.path,
       fileNode: expandedNode,
     });

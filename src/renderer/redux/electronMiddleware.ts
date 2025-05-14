@@ -102,9 +102,9 @@ export const setupElectronListeners = (store: any) => {
 
   // Directory events
   window.electron.ipcRenderer.on(
-    ipcChannels.DIRECTORY_EXPAND,
-    (expandedNode: unknown) => {
-      store.dispatch({ type: 'files/expandDirectory', payload: expandedNode });
+    ipcChannels.FILE_NODE_UPDATE,
+    (updatedNode: unknown) => {
+      store.dispatch({ type: 'files/updateFileNode', payload: updatedNode });
     },
   );
 

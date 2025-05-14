@@ -7,7 +7,7 @@ export const ipcChannels = {
   WORKSPACE_FILENODE_DELETE: 'workspace:fileNodeDelete',
 
   // Directory
-  DIRECTORY_EXPAND: 'directory:expand',
+  FILE_NODE_UPDATE: 'fileNode:update',
   DIRECTORY_COLLAPSE: 'directory:collapse',
 
   FILE_NODE_SELECTION_CHANGED: 'fileNode:selectionChanged',

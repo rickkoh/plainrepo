@@ -38,7 +38,7 @@ function TreeNode({
             fileNode.type === 'file' && 'opacity-0 pointer-events-none',
           )}
           onClick={() => {
-            window.electron.ipcRenderer.sendMessage(`directory:expand`, {
+            window.electron.ipcRenderer.sendMessage(`fileNode:update`, {
               path: fileNode.path,
               expanded: !open,
             });
