@@ -42,6 +42,7 @@ Version 1.0.0-alpha (Unreleased):
   ✔ Persist workspace
   ✔ Darkmode
 
+
 Version 1.0.0-rc:
   ✔ Perpetual sync @done(25-02-28 02:24)
   ✔ Clean up preload/remove old functions @done(25-03-03 01:17)
@@ -60,8 +61,12 @@ Version 1.0.0-rc:
   ✔ Optimise file node performance @done(25-03-07 02:18)
   ✔ Decide and fix autosync @done(25-03-07 02:18)
   ✘ Tabs feature @cancelled(25-03-07 02:18)
-  ☐ Write test
-  ☐ Write release notes
+  ✘ Write test @cancelled(25-05-15 21:06)
+  ✔ Write release notes @done(25-05-15 21:06)
+
+Version 1.0.1-rc:
+  ☐ Improve performance of auto sync
+  ☐ Watch for file changes
 
 Features:
   ✘ Autosync state, Autosync on, off, syncing @cancelled(25-02-28 02:22)
@@ -97,15 +102,15 @@ Optimisations:
   ✔ Optimise search for file @done(25-02-23 12:44)
 
 Landing Page:
-  ☐ Release first version of the app
-  ☐ Open source link
-  ☐ Github link
-  ☐ Landing page (Plain Repo)
-    ☐ Plain text view of your repo
-    ☐ For you to: Pick, Copy, Search
-    ☐ Have control over what to pick: Ignore folders/files/keywords
-    ☐ Feed the right context to AI models at your fingertips
-  ☐ Download button
+  ✔ Release first version of the app @done(25-05-15 21:07)
+  ✔ Open source link @done(25-05-15 21:07)
+  ✔ Github link @done(25-05-15 21:07)
+  ✔ Landing page (Plain Repo) @done(25-05-15 21:07)
+    ✔ Plain text view of your repo @done(25-05-15 21:07)
+    ✔ For you to: Pick, Copy, Search @done(25-05-15 21:07)
+    ✔ Have control over what to pick: Ignore folders/files/keywords @done(25-05-15 21:07)
+    ✔ Feed the right context to AI models at your fingertips @done(25-05-15 21:07)
+  ✔ Download button @done(25-05-15 21:07)
   ☐ Donate button
 
 Bugs:
@@ -120,5 +125,5 @@ Performance:
   ✔ DFS to change selected should have some pruning functions @done(25-01-27 00:04)
   ✔ Form set value to have batch update instead of individual @done(25-01-26 23:48)
   ✔ Improve performance for auto get tokens @done(25-01-26 23:48)
-  ☐ Autosync should run concurrently and should update in real-time
+  ✔ Autosync should run concurrently and should update in real-time @done(25-05-15 21:11)
   ☐ Able to cancel "opening file" when autoSync is on
