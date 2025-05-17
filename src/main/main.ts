@@ -12,29 +12,15 @@ import path from 'path';
 import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
-import chokidar from 'chokidar';
-import fs from 'fs';
-
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
-import {
-  buildFileNode,
-  buildFileNodeSingleLevel,
-  buildFileNodeToPath,
-  generateDirectoryStructure,
-  searchFileSystem,
-} from './utils/FileBuilder';
 import { FileNode, FileNodeSchema } from '../types/FileNode';
 import {
   FileNodeExpandSchema,
   FileNodeSearchSchema,
   FileNodeSelectionSchema,
 } from '../types/FileNodeDto';
-import {
-  readAppSettings,
-  writeAppSettings,
-  globToRegex,
-} from './utils/AppSettings';
+import { readAppSettings, writeAppSettings } from './utils/AppSettings';
 import { ipcChannels } from '../shared/ipcChannels';
 import {
   toggleFileNodeSelection,
@@ -42,9 +28,20 @@ import {
   updateSelectedPaths,
 } from '../shared/utils/FileNodeUtils';
 import {
+  buildFileNode,
+  buildFileNodeSingleLevel,
+  buildFileNodeToPath,
+  generateDirectoryStructure,
+  searchFileSystem,
+} from './utils/FileBuilder';
+import {
   createFileContentService,
   FileContentService,
 } from './services/fileContentService';
+import {
+  createFileWatcherService,
+  FileWatcherService,
+} from './services/fileWatcherService';
 
 class AppUpdater {
   constructor() {
@@ -56,73 +53,12 @@ class AppUpdater {
 
 let mainWindow: BrowserWindow | null = null;
 
-// Global state to track expanded directories and watchers
-let activeWatcher: any = null;
+// Global state
 let rootFileNode: FileNode | null = null;
 let rootDirectory: string | null = null;
 let fileContentService: FileContentService | null = null;
-const expandedDirectories = new Set<string>();
+let fileWatcherService: FileWatcherService | null = null;
 const selectedPaths = new Set<string>();
-const pathWatchers = new Map<string, any>();
-
-// Helper function to add directories to watcher
-function watchDirectory(dirPath: string, depth?: number) {
-  if (!activeWatcher) return;
-
-  console.log(
-    'Adding directory to watch:',
-    dirPath,
-    depth !== undefined ? `at depth ${depth}` : '',
-  );
-  expandedDirectories.add(dirPath);
-
-  // Add this directory to the watcher with specific options when depth is provided
-  if (depth !== undefined) {
-    // For specific depth watching, we need a new watcher instance for this path
-    const appSettings = readAppSettings();
-    const excludeList = appSettings.exclude || [];
-
-    const pathWatcher = chokidar.watch(dirPath, {
-      ignored: globToRegex(excludeList),
-      persistent: true,
-      ignoreInitial: true,
-      awaitWriteFinish: true,
-      depth,
-    }) as any;
-
-    // Copy all event handlers from the main watcher to this path-specific watcher
-    ['add', 'change', 'unlink', 'addDir', 'unlinkDir'].forEach((eventName) => {
-      const listeners = (activeWatcher as any).listeners(eventName);
-      listeners.forEach((listener: (path: string) => void) => {
-        pathWatcher.on(eventName, listener);
-      });
-    });
-
-    // Store this watcher to prevent garbage collection
-    pathWatchers.set(dirPath, pathWatcher);
-  } else {
-    // Default behavior - just add to the main watcher (depth: 0)
-    activeWatcher.add(dirPath);
-  }
-}
-
-// Helper function to remove directories from watcher
-function unwatchDirectory(dirPath: string) {
-  if (!activeWatcher) return;
-
-  console.log('Removing directory from watch:', dirPath);
-  expandedDirectories.delete(dirPath);
-
-  // Check if we have a specific watcher for this path
-  if (pathWatchers.has(dirPath)) {
-    const pathWatcher = pathWatchers.get(dirPath);
-    pathWatcher.close();
-    pathWatchers.delete(dirPath);
-  } else {
-    // Default behavior - unwatch from the main watcher
-    activeWatcher.unwatch(dirPath);
-  }
-}
 
 ipcMain.on('ipc-example', async (event, arg) => {
   const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
@@ -148,199 +84,16 @@ ipcMain.on('dialog:openDirectory', async () => {
 
   rootDirectory = selectedPath;
 
-  if (activeWatcher) {
-    activeWatcher.close();
-    activeWatcher = null;
-  }
-
-  const appSettings = readAppSettings();
-  const excludeList = appSettings.exclude || [];
-
-  activeWatcher = chokidar.watch([], {
-    ignored: globToRegex(excludeList),
-    persistent: true,
-    ignoreInitial: true,
-    awaitWriteFinish: true,
-    depth: 0,
-  });
-
-  // Add file watcher listeners
-  activeWatcher.on('add', (filePath: string) => {
-    if (!rootFileNode || !mainWindow) return;
-
-    const dirPath = path.dirname(filePath);
-    const parentNode = searchFileNode(rootFileNode, dirPath);
-
-    if (parentNode && parentNode.expanded && parentNode.children) {
-      const fileName = path.basename(filePath);
-
-      // Check if file already exists in the children array to avoid duplicates
-      const existingFileIndex = parentNode.children.findIndex(
-        (child) => child.path === filePath || child.name === fileName,
-      );
-
-      // If file exists, remove it first to avoid duplicates
-      if (existingFileIndex !== -1) {
-        parentNode.children.splice(existingFileIndex, 1);
-      }
-
-      // Add the new file to the parent node
-      const stats = fs.statSync(filePath);
-      const isDirectory = stats.isDirectory();
-
-      const newNode: FileNode = {
-        name: fileName,
-        path: filePath,
-        type: isDirectory ? 'directory' : 'file',
-        selected: false,
-        expanded: false,
-        ...(isDirectory ? { children: [] } : {}),
-      };
-
-      parentNode.children.push(newNode);
-      mainWindow.webContents.send(ipcChannels.FILE_NODE_UPDATE, {
-        path: dirPath,
-        fileNode: parentNode,
-      });
-    }
-  });
-
-  activeWatcher.on('unlink', (filePath: string) => {
-    if (!rootFileNode || !mainWindow) return;
-
-    const dirPath = path.dirname(filePath);
-    const parentNode = searchFileNode(rootFileNode, dirPath);
-
-    if (parentNode && parentNode.expanded && parentNode.children) {
-      const fileName = path.basename(filePath);
-      parentNode.children = parentNode.children.filter(
-        (child) => child.name !== fileName,
-      );
-
-      const { selectedPaths: changes } = toggleFileNodeSelection(
-        rootFileNode,
-        dirPath,
-        false,
-      );
-      updateSelectedPaths(selectedPaths, changes);
-
-      mainWindow.webContents.send(ipcChannels.FILE_NODE_UPDATE, {
-        path: dirPath,
-        fileNode: parentNode,
-      });
-
-      // Update file contents using the service
-      if (fileContentService) {
-        fileContentService.updateFileContents(rootFileNode, {
-          selectedOnly: true,
-        });
-      }
-    }
-  });
-
-  activeWatcher.on('change', (filePath: string) => {
-    if (!rootFileNode || !mainWindow) return;
-
-    // For file content changes, check if the file is selected
-    const fileNode = searchFileNode(rootFileNode, filePath);
-    if (fileNode && fileNode.selected) {
-      // Read the file content
-      try {
-        const content = fs.readFileSync(filePath, 'utf8');
-        const fileContents = [{ path: filePath, content }];
-
-        // Update the UI with the new content
-        mainWindow.webContents.send(
-          ipcChannels.FILE_CONTENTS_ADD,
-          fileContents,
-        );
-      } catch (err) {
-        console.error('Error reading changed file:', err);
-      }
-
-      // Update file contents using the service
-      if (fileContentService) {
-        fileContentService.updateFileContents(rootFileNode, {
-          selectedOnly: true,
-        });
-      }
-    }
-  });
-
-  activeWatcher.on('addDir', (dirPath: string) => {
-    if (!rootFileNode || !mainWindow) return;
-
-    const parentPath = path.dirname(dirPath);
-    const parentNode = searchFileNode(rootFileNode, parentPath);
-
-    if (parentNode && parentNode.expanded && parentNode.children) {
-      const dirName = path.basename(dirPath);
-
-      // Check if directory already exists in the children array to avoid duplicates
-      const existingDirIndex = parentNode.children.findIndex(
-        (child) => child.path === dirPath || child.name === dirName,
-      );
-
-      // If directory exists, remove it first to avoid duplicates
-      if (existingDirIndex !== -1) {
-        parentNode.children.splice(existingDirIndex, 1);
-      }
-
-      const newNode: FileNode = {
-        name: dirName,
-        path: dirPath,
-        type: 'directory',
-        expanded: false,
-        children: [],
-        selected: false,
-      };
-
-      parentNode.children.push(newNode);
-      mainWindow.webContents.send(ipcChannels.FILE_NODE_UPDATE, {
-        path: parentPath,
-        fileNode: parentNode,
-      });
-    }
-  });
-
-  activeWatcher.on('unlinkDir', (dirPath: string) => {
-    if (!rootFileNode || !mainWindow) return;
-
-    const parentPath = path.dirname(dirPath);
-    const parentNode = searchFileNode(rootFileNode, parentPath);
-
-    if (parentNode && parentNode.expanded && parentNode.children) {
-      const dirName = path.basename(dirPath);
-      parentNode.children = parentNode.children.filter(
-        (child) => child.name !== dirName,
-      );
-
-      const { selectedPaths: changes } = toggleFileNodeSelection(
-        rootFileNode,
-        dirPath,
-        false,
-      );
-      updateSelectedPaths(selectedPaths, changes);
-
-      mainWindow.webContents.send(ipcChannels.FILE_NODE_UPDATE, {
-        path: parentPath,
-        fileNode: parentNode,
-      });
-
-      // Update file contents using the service
-      if (fileContentService) {
-        fileContentService.updateFileContents(rootFileNode, {
-          selectedOnly: true,
-        });
-      }
-    }
-  });
-
   mainWindow.webContents.send('workspace:path', selectedPath);
 
   const start = Date.now();
   rootFileNode = buildFileNodeSingleLevel(selectedPath);
-  watchDirectory(rootDirectory);
+
+  // Initialize the file watcher with the root directory
+  if (fileWatcherService) {
+    fileWatcherService.initializeWatcher(selectedPath, rootFileNode);
+  }
+
   const timeTaken = Date.now() - start;
 
   console.log('Time taken:', timeTaken);
@@ -352,7 +105,7 @@ ipcMain.on('dialog:openDirectory', async () => {
 ipcMain.on('fileNode:update', (event, arg) => {
   console.log('Updating file node', arg);
 
-  if (!mainWindow || !rootFileNode) {
+  if (!mainWindow || !rootFileNode || !fileWatcherService) {
     return;
   }
 
@@ -364,8 +117,8 @@ ipcMain.on('fileNode:update', (event, arg) => {
   const { path: directoryPath, expanded } = parsedResult.data;
 
   if (!expanded) {
-    // TODO: Not sure if we should unwatch the directory and all children
-    unwatchDirectory(directoryPath);
+    // Unwatch the directory
+    fileWatcherService!.unwatchDirectory(directoryPath);
     return;
   }
 
@@ -376,7 +129,7 @@ ipcMain.on('fileNode:update', (event, arg) => {
   }
 
   const expandedNode = buildFileNodeSingleLevel(directoryPath);
-  watchDirectory(directoryPath);
+  fileWatcherService!.watchDirectory(directoryPath);
 
   Object.assign(targetnode, expandedNode);
 
@@ -390,7 +143,7 @@ ipcMain.on('fileNode:update', (event, arg) => {
 ipcMain.on('fileNode:select', (event, arg) => {
   console.log('Selecting node', arg);
 
-  if (!mainWindow || !rootFileNode) {
+  if (!mainWindow || !rootFileNode || !fileWatcherService) {
     return;
   }
 
@@ -419,7 +172,7 @@ ipcMain.on('fileNode:select', (event, arg) => {
         fileNode: node,
       });
 
-      watchDirectory(expandedPath);
+      fileWatcherService!.watchDirectory(expandedPath);
     });
 
     if (!targetNode) {
@@ -436,8 +189,11 @@ ipcMain.on('fileNode:select', (event, arg) => {
       fileNode: expandedNode,
     });
 
-    watchDirectory(targetNode.path, Infinity);
+    fileWatcherService!.watchDirectory(targetNode.path, Infinity);
   }
+
+  // Update the root node in the file watcher service
+  fileWatcherService!.setRootFileNode(rootFileNode);
 
   const { selectedPaths: changes } = toggleFileNodeSelection(
     rootFileNode,
@@ -592,6 +348,7 @@ const createWindow = async () => {
 
   // Initialize services
   fileContentService = createFileContentService(mainWindow);
+  fileWatcherService = createFileWatcherService(mainWindow, fileContentService);
 
   mainWindow.loadURL(resolveHtmlPath('index.html'));
 
