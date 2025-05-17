@@ -1,3 +1,11 @@
+# 1.0.1 (2025-05-17)
+
+#### Features
+
+- **File watch** - Watch for file changes and update the file contents in real-time.
+- **Performance improvements** - Improve the performance of the app using file discovery techniques.
+- **Bug fixes** - Fix some bugs.
+
 # 1.0.0 (2025-02-20)
 
 #### Features

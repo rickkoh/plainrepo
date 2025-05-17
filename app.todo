@@ -65,12 +65,12 @@ Version 1.0.0-rc:
   ✔ Write release notes @done(25-05-15 21:06)
 
 Version 1.0.1-rc:
-  ☐ Improve performance of auto sync
-  ☐ Watch for file changes
+  ✔ Improve performance of auto sync @done(25-05-18 01:02)
+  ✔ Watch for file changes @done(25-05-18 01:02)
 
 Features:
   ✘ Autosync state, Autosync on, off, syncing @cancelled(25-02-28 02:22)
-  ☐ Workspace should watch for file changes (Cannot watch if there are too many files)
+  ✔ Workspace should watch for file changes (Cannot watch if there are too many files) @done(25-05-18 01:02)
   ✔ Search
     ✔ Search for file @done(25-02-15 13:26)
     ☐ Goto file
@@ -91,10 +91,10 @@ Features:
 Big changes:
   ☐ Change to use react-window
   ✔ Change to use redux (kiv) @done(25-05-10 18:34)
-  ☐ Implement file discovery to watch lesser files
+  ✔ Implement file discovery to watch lesser files @done(25-05-18 01:02)
     ✔ Discover files level by level @done(25-05-14 21:00)
     ✔ Reflect state in UI (explorer and search) @done(25-05-15 00:39)
-    ☐ Use chokidar to watch for file changes
+    ✔ Use chokidar to watch for file changes @done(25-05-18 01:03)
 
 Optimisations:
   ☐ Optimise reading of app settings for excluded folders/files
