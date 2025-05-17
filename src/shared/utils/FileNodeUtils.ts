@@ -75,13 +75,16 @@ export function toggleFileNodeSelection(
   rootNode: FileNode,
   targetPath: string,
   selected: boolean,
-): boolean {
+): { selectedPaths: Array<{ path: string; selected: boolean }> } {
+  const selectedPaths: Array<{ path: string; selected: boolean }> = [];
+
   const toggleChildrenSelection = (node: FileNode, isSelected: boolean) => {
     if (!node.children) return;
 
     for (let i = 0; i < node.children.length; i += 1) {
       const child = node.children[i];
       child.selected = isSelected;
+      selectedPaths.push({ path: child.path, selected: isSelected });
 
       if (child.type === 'directory' && child.children) {
         toggleChildrenSelection(child, isSelected);
@@ -92,6 +95,7 @@ export function toggleFileNodeSelection(
   const findAndToggle = (node: FileNode): boolean => {
     if (node.path === targetPath) {
       node.selected = selected;
+      selectedPaths.push({ path: node.path, selected });
 
       if (node.type === 'directory' && node.children) {
         toggleChildrenSelection(node, selected);
@@ -113,7 +117,8 @@ export function toggleFileNodeSelection(
     return false;
   };
 
-  return findAndToggle(rootNode);
+  findAndToggle(rootNode);
+  return { selectedPaths };
 }
 
 export function toggleFlatFileNodeSelection(
@@ -138,4 +143,23 @@ export function resetSelection(rootNode: FileNode) {
   if (!rootNode) return;
 
   toggleFileNodeSelection(rootNode, rootNode.path, false);
+}
+
+/**
+ * Updates a set of selected paths based on changes from toggle operations
+ *
+ * @param selectedPathsSet - The Set to update with selected paths
+ * @param changes - Array of path changes with selection state
+ */
+export function updateSelectedPaths(
+  selectedPathsSet: Set<string>,
+  changes: Array<{ path: string; selected: boolean }>,
+) {
+  changes.forEach(({ path: changedPath, selected }) => {
+    if (selected) {
+      selectedPathsSet.add(changedPath);
+    } else {
+      selectedPathsSet.delete(changedPath);
+    }
+  });
 }

@@ -43,6 +43,7 @@ import {
   toggleFileNodeSelection,
   searchFileNode,
   flattenFileNode,
+  updateSelectedPaths,
 } from '../shared/utils/FileNodeUtils';
 
 class AppUpdater {
@@ -60,6 +61,7 @@ let activeWatcher: any = null;
 let rootFileNode: FileNode | null = null;
 let rootDirectory: string | null = null;
 const expandedDirectories = new Set<string>();
+const selectedPaths = new Set<string>();
 const pathWatchers = new Map<string, any>();
 
 // Helper function to add directories to watcher
@@ -214,7 +216,12 @@ ipcMain.on('dialog:openDirectory', async () => {
         (child) => child.name !== fileName,
       );
 
-      toggleFileNodeSelection(rootFileNode, dirPath, false);
+      const { selectedPaths: changes } = toggleFileNodeSelection(
+        rootFileNode,
+        dirPath,
+        false,
+      );
+      updateSelectedPaths(selectedPaths, changes);
 
       mainWindow.webContents.send(ipcChannels.FILE_NODE_UPDATE, {
         path: dirPath,
@@ -365,7 +372,12 @@ ipcMain.on('dialog:openDirectory', async () => {
         (child) => child.name !== dirName,
       );
 
-      toggleFileNodeSelection(rootFileNode, dirPath, false);
+      const { selectedPaths: changes } = toggleFileNodeSelection(
+        rootFileNode,
+        dirPath,
+        false,
+      );
+      updateSelectedPaths(selectedPaths, changes);
 
       mainWindow.webContents.send(ipcChannels.FILE_NODE_UPDATE, {
         path: parentPath,
@@ -513,7 +525,13 @@ ipcMain.on('fileNode:select', (event, arg) => {
     watchDirectory(targetNode.path, Infinity);
   }
 
-  toggleFileNodeSelection(rootFileNode, nodePath, selected);
+  const { selectedPaths: changes } = toggleFileNodeSelection(
+    rootFileNode,
+    nodePath,
+    selected,
+  );
+  updateSelectedPaths(selectedPaths, changes);
+
   mainWindow.webContents.send(ipcChannels.FILE_NODE_SELECTION_CHANGED, {
     path: targetNode.path,
     selected,
@@ -570,7 +588,14 @@ ipcMain.handle('search:files', async (event, arg) => {
     caseSensitive: search.caseSensitive,
   });
 
-  return { success: true, result };
+  const resultWithSelected = result.map((node) => {
+    return {
+      ...node,
+      selected: selectedPaths.has(node.path),
+    };
+  });
+
+  return { success: true, result: resultWithSelected };
 });
 
 ipcMain.handle('stream:content', async (event, arg) => {
