@@ -28,6 +28,9 @@ export const ipcChannels = {
 
   // Dialogs
   DIALOG_OPEN_DIRECTORY: 'dialog:openDirectory',
+
+  // Notifications
+  NOTIFICATION_SEND: 'notification:send',
 } as const;
 
 export type IPCChannel = (typeof ipcChannels)[keyof typeof ipcChannels];
