@@ -24,7 +24,6 @@ import {
   generateDirectoryStructure,
   searchFileSystem,
 } from './utils/FileBuilder';
-import { streamGetContent } from './utils/ContentAggregator';
 import { FileNode, FileNodeSchema } from '../types/FileNode';
 import {
   FileNodeExpandSchema,
@@ -36,15 +35,16 @@ import {
   writeAppSettings,
   globToRegex,
 } from './utils/AppSettings';
-import { FileContent } from '../types/FileContent';
-import TokenEstimator from './utils/TokenEstimator';
 import { ipcChannels } from '../shared/ipcChannels';
 import {
   toggleFileNodeSelection,
   searchFileNode,
-  flattenFileNode,
   updateSelectedPaths,
 } from '../shared/utils/FileNodeUtils';
+import {
+  createFileContentService,
+  FileContentService,
+} from './services/fileContentService';
 
 class AppUpdater {
   constructor() {
@@ -60,6 +60,7 @@ let mainWindow: BrowserWindow | null = null;
 let activeWatcher: any = null;
 let rootFileNode: FileNode | null = null;
 let rootDirectory: string | null = null;
+let fileContentService: FileContentService | null = null;
 const expandedDirectories = new Set<string>();
 const selectedPaths = new Set<string>();
 const pathWatchers = new Map<string, any>();
@@ -228,41 +229,12 @@ ipcMain.on('dialog:openDirectory', async () => {
         fileNode: parentNode,
       });
 
-      mainWindow.webContents.send(ipcChannels.TOKEN_COUNT_SET, 0);
-      mainWindow.webContents.send(ipcChannels.FILE_CONTENTS_CLEAR);
-
-      const directoryTree = generateDirectoryStructure(rootFileNode, {
-        selectedOnly: true,
-      });
-      mainWindow.webContents.send(
-        ipcChannels.DIRECTORY_TREE_SET,
-        directoryTree,
-      );
-
-      let count = TokenEstimator.estimateTokens(directoryTree);
-      mainWindow.webContents.send(ipcChannels.TOKEN_COUNT_SET, count);
-
-      const flattenedNode = flattenFileNode(rootFileNode, {
-        selectedOnly: true,
-      });
-
-      streamGetContent(flattenedNode, (fileContents: FileContent[]) => {
-        if (!mainWindow) {
-          return;
-        }
-
-        for (let i = 0; i < fileContents.length; i += 1) {
-          const fileContent = fileContents[i];
-          count += TokenEstimator.estimateTokens(fileContent.content);
-        }
-
-        mainWindow.webContents.send(ipcChannels.TOKEN_COUNT_SET, count);
-
-        mainWindow.webContents.send(
-          ipcChannels.FILE_CONTENTS_ADD,
-          fileContents,
-        );
-      });
+      // Update file contents using the service
+      if (fileContentService) {
+        fileContentService.updateFileContents(rootFileNode, {
+          selectedOnly: true,
+        });
+      }
     }
   });
 
@@ -286,41 +258,12 @@ ipcMain.on('dialog:openDirectory', async () => {
         console.error('Error reading changed file:', err);
       }
 
-      mainWindow.webContents.send(ipcChannels.TOKEN_COUNT_SET, 0);
-      mainWindow.webContents.send(ipcChannels.FILE_CONTENTS_CLEAR);
-
-      const directoryTree = generateDirectoryStructure(rootFileNode, {
-        selectedOnly: true,
-      });
-      mainWindow.webContents.send(
-        ipcChannels.DIRECTORY_TREE_SET,
-        directoryTree,
-      );
-
-      let count = TokenEstimator.estimateTokens(directoryTree);
-      mainWindow.webContents.send(ipcChannels.TOKEN_COUNT_SET, count);
-
-      const flattenedNode = flattenFileNode(rootFileNode, {
-        selectedOnly: true,
-      });
-
-      streamGetContent(flattenedNode, (fileContents: FileContent[]) => {
-        if (!mainWindow) {
-          return;
-        }
-
-        for (let i = 0; i < fileContents.length; i += 1) {
-          const fileContent = fileContents[i];
-          count += TokenEstimator.estimateTokens(fileContent.content);
-        }
-
-        mainWindow.webContents.send(ipcChannels.TOKEN_COUNT_SET, count);
-
-        mainWindow.webContents.send(
-          ipcChannels.FILE_CONTENTS_ADD,
-          fileContents,
-        );
-      });
+      // Update file contents using the service
+      if (fileContentService) {
+        fileContentService.updateFileContents(rootFileNode, {
+          selectedOnly: true,
+        });
+      }
     }
   });
 
@@ -384,41 +327,12 @@ ipcMain.on('dialog:openDirectory', async () => {
         fileNode: parentNode,
       });
 
-      mainWindow.webContents.send(ipcChannels.TOKEN_COUNT_SET, 0);
-      mainWindow.webContents.send(ipcChannels.FILE_CONTENTS_CLEAR);
-
-      const directoryTree = generateDirectoryStructure(rootFileNode, {
-        selectedOnly: true,
-      });
-      mainWindow.webContents.send(
-        ipcChannels.DIRECTORY_TREE_SET,
-        directoryTree,
-      );
-
-      let count = TokenEstimator.estimateTokens(directoryTree);
-      mainWindow.webContents.send(ipcChannels.TOKEN_COUNT_SET, count);
-
-      const flattenedNode = flattenFileNode(rootFileNode, {
-        selectedOnly: true,
-      });
-
-      streamGetContent(flattenedNode, (fileContents: FileContent[]) => {
-        if (!mainWindow) {
-          return;
-        }
-
-        for (let i = 0; i < fileContents.length; i += 1) {
-          const fileContent = fileContents[i];
-          count += TokenEstimator.estimateTokens(fileContent.content);
-        }
-
-        mainWindow.webContents.send(ipcChannels.TOKEN_COUNT_SET, count);
-
-        mainWindow.webContents.send(
-          ipcChannels.FILE_CONTENTS_ADD,
-          fileContents,
-        );
-      });
+      // Update file contents using the service
+      if (fileContentService) {
+        fileContentService.updateFileContents(rootFileNode, {
+          selectedOnly: true,
+        });
+      }
     }
   });
 
@@ -537,35 +451,10 @@ ipcMain.on('fileNode:select', (event, arg) => {
     selected,
   });
 
-  mainWindow.webContents.send(ipcChannels.TOKEN_COUNT_SET, 0);
-  mainWindow.webContents.send(ipcChannels.FILE_CONTENTS_CLEAR);
-
-  const directoryTree = generateDirectoryStructure(rootFileNode, {
-    selectedOnly: true,
-  });
-  mainWindow.webContents.send(ipcChannels.DIRECTORY_TREE_SET, directoryTree);
-
-  let count = TokenEstimator.estimateTokens(directoryTree);
-  mainWindow.webContents.send(ipcChannels.TOKEN_COUNT_SET, count);
-
-  const flattenedNode = flattenFileNode(rootFileNode, {
-    selectedOnly: true,
-  });
-
-  streamGetContent(flattenedNode, (fileContents: FileContent[]) => {
-    if (!mainWindow) {
-      return;
-    }
-
-    for (let i = 0; i < fileContents.length; i += 1) {
-      const fileContent = fileContents[i];
-      count += TokenEstimator.estimateTokens(fileContent.content);
-    }
-
-    mainWindow.webContents.send(ipcChannels.TOKEN_COUNT_SET, count);
-
-    mainWindow.webContents.send(ipcChannels.FILE_CONTENTS_ADD, fileContents);
-  });
+  // Update file contents using the service
+  if (fileContentService) {
+    fileContentService.updateFileContents(rootFileNode, { selectedOnly: true });
+  }
 });
 
 ipcMain.handle('search:files', async (event, arg) => {
@@ -609,36 +498,11 @@ ipcMain.handle('stream:content', async (event, arg) => {
   }
 
   const fileNode = parsedResult.data;
-  const directoryTree = generateDirectoryStructure(fileNode);
 
-  // Send the directory tree structure directly
-  mainWindow.webContents.send(ipcChannels.DIRECTORY_TREE_SET, directoryTree);
-
-  // Send initial token count
-  let count = TokenEstimator.estimateTokens(directoryTree);
-  mainWindow.webContents.send(ipcChannels.TOKEN_COUNT_SET, count);
-
-  // Clear previous content before loading new content
-  mainWindow.webContents.send(ipcChannels.FILE_CONTENTS_CLEAR);
-
-  // Stream content in chunks
-  const flattenedFileNodes = flattenFileNode(fileNode);
-  streamGetContent(flattenedFileNodes, (fileContents: FileContent[]) => {
-    if (!mainWindow) {
-      return;
-    }
-
-    // Update token count with your preferred for loop style
-    for (let i = 0; i < fileContents.length; i += 1) {
-      const fileContent = fileContents[i];
-      count += TokenEstimator.estimateTokens(fileContent.content);
-    }
-
-    mainWindow.webContents.send(ipcChannels.TOKEN_COUNT_SET, count);
-
-    // Add new content
-    mainWindow.webContents.send(ipcChannels.FILE_CONTENTS_ADD, fileContents);
-  });
+  // Use fileContentService to update content
+  if (fileContentService) {
+    fileContentService.updateFileContents(fileNode);
+  }
 
   return null;
 });
@@ -725,6 +589,9 @@ const createWindow = async () => {
         : path.join(__dirname, '../../.erb/dll/preload.js'),
     },
   });
+
+  // Initialize services
+  fileContentService = createFileContentService(mainWindow);
 
   mainWindow.loadURL(resolveHtmlPath('index.html'));
 
