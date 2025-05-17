@@ -2,6 +2,12 @@ import { BrowserWindow } from 'electron';
 import * as chokidar from 'chokidar';
 import fs from 'fs';
 import path from 'path';
+
+import {
+  ExcludeListSchema,
+  ShouldIncludeGitIgnoreSchema,
+} from '@/src/types/AppSettings';
+
 import { FileNode } from '../../types/FileNode';
 import { ipcChannels } from '../../shared/ipcChannels';
 import { readAppSettings, globToRegex } from '../utils/AppSettings';
@@ -11,6 +17,7 @@ import {
   updateSelectedPaths,
 } from '../../shared/utils/FileNodeUtils';
 import { FileContentService } from './fileContentService';
+import { getGitIgnorePatterns } from '../utils/Excluder';
 
 export class FileWatcherService {
   private mainWindow: BrowserWindow;
@@ -39,36 +46,42 @@ export class FileWatcherService {
    * Initialize the watcher for a root directory
    */
   public initializeWatcher(rootDir: string, rootNode: FileNode): void {
-    this.rootFileNode = rootNode;
+    try {
+      this.rootFileNode = rootNode;
 
-    // Close any existing watcher
-    if (this.activeWatcher) {
-      this.activeWatcher.close();
-      this.activeWatcher = null;
+      // Close any existing watcher
+      if (this.activeWatcher) {
+        this.activeWatcher.close();
+        this.activeWatcher = null;
+      }
+
+      // Clear watchers and paths
+      this.pathWatchers.forEach((watcher) => watcher.close());
+      this.pathWatchers.clear();
+      this.expandedDirectories.clear();
+
+      const appSettings = readAppSettings();
+      const excludeList = appSettings.exclude || [];
+
+      // Initialize the main watcher
+      this.activeWatcher = chokidar.watch([], {
+        ignored: globToRegex(excludeList),
+        persistent: true,
+        ignoreInitial: true,
+        depth: 0,
+        usePolling: process.platform === 'darwin', // Use polling on macOS to reduce file descriptor usage
+        interval: 1000, // Slower polling interval to reduce system load
+        binaryInterval: 3000, // Even slower for binary files
+      });
+
+      // Set up all the event handlers
+      this.setupEventHandlers();
+
+      // Start watching the root directory
+      this.watchDirectory(rootDir);
+    } catch (error) {
+      console.error('Error initializing file watcher:', error);
     }
-
-    // Clear watchers and paths
-    this.pathWatchers.forEach((watcher) => watcher.close());
-    this.pathWatchers.clear();
-    this.expandedDirectories.clear();
-
-    const appSettings = readAppSettings();
-    const excludeList = appSettings.exclude || [];
-
-    // Initialize the main watcher
-    this.activeWatcher = chokidar.watch([], {
-      ignored: globToRegex(excludeList),
-      persistent: true,
-      ignoreInitial: true,
-      // awaitWriteFinish: true,
-      depth: 0,
-    });
-
-    // Set up all the event handlers
-    this.setupEventHandlers();
-
-    // Start watching the root directory
-    this.watchDirectory(rootDir);
   }
 
   /**
@@ -77,27 +90,53 @@ export class FileWatcherService {
   private setupEventHandlers(): void {
     if (!this.activeWatcher) return;
 
+    // Catch any unhandled errors in the watcher
+    // @ts-ignore - chokidar's type definition is incompatible with TypeScript's strict type checking
+    this.activeWatcher.on('error', (error) => {
+      console.error('Watcher error:', error);
+    });
+
     // @ts-ignore
     this.activeWatcher.on('add', (filePath: string) => {
-      console.log('File added:', filePath);
-      this.handleFileAdded(filePath);
+      try {
+        console.log('File added:', filePath);
+        this.handleFileAdded(filePath);
+      } catch (error) {
+        console.error(`Error handling file add for ${filePath}:`, error);
+      }
     });
     // @ts-ignore
-    this.activeWatcher.on('unlink', (filePath: string) =>
-      this.handleFileRemoved(filePath),
-    );
+    this.activeWatcher.on('unlink', (filePath: string) => {
+      try {
+        this.handleFileRemoved(filePath);
+      } catch (error) {
+        console.error(`Error handling file remove for ${filePath}:`, error);
+      }
+    });
     // @ts-ignore
-    this.activeWatcher.on('change', (filePath: string) =>
-      this.handleFileChanged(filePath),
-    );
+    this.activeWatcher.on('change', (filePath: string) => {
+      try {
+        this.handleFileChanged(filePath);
+      } catch (error) {
+        console.error(`Error handling file change for ${filePath}:`, error);
+      }
+    });
     // @ts-ignore
-    this.activeWatcher.on('addDir', (dirPath: string) =>
-      this.handleDirectoryAdded(dirPath),
-    );
+    this.activeWatcher.on('addDir', (dirPath: string) => {
+      try {
+        this.handleDirectoryAdded(dirPath);
+      } catch (error) {
+        console.error(`Error handling directory add for ${dirPath}:`, error);
+      }
+    });
     // @ts-ignore
-    this.activeWatcher.on('unlinkDir', (dirPath: string) =>
-      this.handleDirectoryRemoved(dirPath),
-    );
+    this.activeWatcher.on('unlinkDir', (dirPath: string) => {
+      try {
+        this.handleDirectoryRemoved(dirPath);
+      } catch (error) {
+        console.error(`Error handling directory remove for ${dirPath}:`, error);
+      }
+    });
   }
 
   /**
@@ -113,36 +152,63 @@ export class FileWatcherService {
     );
     this.expandedDirectories.add(dirPath);
 
-    // Add this directory to the watcher with specific options when depth is provided
-    if (depth !== undefined) {
-      // For specific depth watching, we need a new watcher instance for this path
-      const appSettings = readAppSettings();
-      const excludeList = appSettings.exclude || [];
+    try {
+      // Add this directory to the watcher with specific options when depth is provided
+      if (depth !== undefined) {
+        // For specific depth watching, we need a new watcher instance for this path
+        const appSettings = readAppSettings();
+        const excludePatterns = ExcludeListSchema.parse(appSettings.exclude);
 
-      const pathWatcher = chokidar.watch(dirPath, {
-        ignored: globToRegex(excludeList),
-        persistent: true,
-        ignoreInitial: true,
-        awaitWriteFinish: true,
-        depth,
-      });
+        const shouldIncludeGitIgnore = ShouldIncludeGitIgnoreSchema.parse(
+          appSettings.shouldIncludeGitIgnore,
+        );
 
-      // Copy all event handlers from the main watcher to this path-specific watcher
-      ['add', 'change', 'unlink', 'addDir', 'unlinkDir'].forEach(
-        (eventName) => {
-          const listeners = (this.activeWatcher as any).listeners(eventName);
-          listeners.forEach((listener: (path: string) => void) => {
-            // @ts-ignore
-            pathWatcher.on(eventName, listener);
-          });
-        },
-      );
+        if (shouldIncludeGitIgnore) {
+          excludePatterns.push(...getGitIgnorePatterns(dirPath));
+        }
 
-      // Store this watcher to prevent garbage collection
-      this.pathWatchers.set(dirPath, pathWatcher);
-    } else {
-      // Default behavior - just add to the main watcher (depth: 0)
-      this.activeWatcher.add(dirPath);
+        const pathWatcher = chokidar.watch(dirPath, {
+          ignored: globToRegex(excludePatterns),
+          persistent: true,
+          ignoreInitial: true,
+          depth,
+          usePolling: process.platform === 'darwin', // Use polling on macOS to reduce file descriptor usage
+          interval: 1000, // Slower polling interval to reduce system load
+          binaryInterval: 3000, // Even slower for binary files
+        });
+
+        // Copy all event handlers from the main watcher to this path-specific watcher
+        ['add', 'change', 'unlink', 'addDir', 'unlinkDir'].forEach(
+          (eventName) => {
+            const listeners = (this.activeWatcher as any).listeners(eventName);
+            listeners.forEach((listener: (path: string) => void) => {
+              // @ts-ignore
+              pathWatcher.on(eventName, listener);
+            });
+          },
+        );
+
+        // Store this watcher to prevent garbage collection
+        this.pathWatchers.set(dirPath, pathWatcher);
+      } else {
+        // Default behavior - just add to the main watcher (depth: 0)
+        this.activeWatcher.add(dirPath);
+      }
+    } catch (error: any) {
+      console.error(`Failed to watch directory ${dirPath}:`, error);
+
+      // Send a notification about the error
+      // this.mainWindow.webContents.send(ipcChannels.NOTIFICATION_SEND, {
+      //   type: 'warning',
+      //   message:
+      //     error.code === 'EMFILE'
+      //       ? 'Too many files to watch. Some changes may not be detected.'
+      //       : `Error watching directory: ${error.message || 'Unknown error'}`,
+      //   options: {
+      //     duration: 5000,
+      //     id: `file-watch-error-${dirPath}`,
+      //   },
+      // });
     }
   }
 

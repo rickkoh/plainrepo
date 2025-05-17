@@ -180,6 +180,17 @@ export const setupElectronListeners = (store: any) => {
       });
     },
   );
+
+  // Notification listener
+  window.electron.ipcRenderer.on(
+    ipcChannels.NOTIFICATION_SEND,
+    (notification: unknown) => {
+      store.dispatch({
+        type: 'notifications/showNotification',
+        payload: notification,
+      });
+    },
+  );
 };
 
 export default electronMiddleware;
