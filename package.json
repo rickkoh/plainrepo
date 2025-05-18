@@ -262,7 +262,7 @@
     ],
     "publish": {
       "provider": "github",
-      "owner": "plainrepo",
+      "owner": "rickkoh",
       "repo": "plainrepo"
     }
   },
