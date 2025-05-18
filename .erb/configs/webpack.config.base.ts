@@ -15,18 +15,23 @@ const configuration: webpack.Configuration = {
   module: {
     rules: [
       {
-        test: /\.[jt]sx?$/,
+        test: /\.tsx?$/,
         exclude: /node_modules/,
         use: {
           loader: 'ts-loader',
           options: {
-            // Remove this line to enable type checking in webpack builds
+            // Remove this line if you want to enable type checking in webpack builds
             transpileOnly: true,
             compilerOptions: {
               module: 'esnext',
             },
           },
         },
+      },
+      // Handle native node modules
+      {
+        test: /\.node$/,
+        use: 'node-loader',
       },
     ],
   },

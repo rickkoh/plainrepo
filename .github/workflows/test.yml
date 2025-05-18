@@ -24,12 +24,18 @@ jobs:
         run: |
           npm install
 
+      # Ubuntu-specific step to install additional dependencies
+      - name: Install additional dependencies on Ubuntu
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          npm install --no-save minimatch@5.1.0
+
       - name: npm test
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           npm run package
           npm run lint
-          # Skip TypeScript checks for now
+          # Skip TypeScript checks in CI
           # npm exec tsc
           npm test
