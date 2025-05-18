@@ -84,7 +84,7 @@ Features:
   ☐ Drag and drop tabs
   ☐ Add 'Consolas' font
   ☐ Customisable theme
-  ☐ Add img shields to github README (homepage, release, ci status, coverage, license)
+  ✔ Add img shields to github README (homepage, release, ci status, coverage, license) @done(25-05-18 12:28)
   ☐ Different kinds of chunk options
     ☐ By file size, by line count, by token count etc
 

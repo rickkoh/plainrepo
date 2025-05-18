@@ -2,9 +2,16 @@
   <img src="assets/icon.png" alt="PlainRepo Logo" width="150"/>
 </p>
 
+<div align="center">
+  <a href="https://plainrepo.com"><img alt="Homepage" src="https://img.shields.io/badge/🏠_Homepage-plainrepo.com-blue?style=flat-square"></a>
+  <a href="https://github.com/rickkoh/plainrepo/actions/workflows/test.yml"><img alt="Build Status" src="https://img.shields.io/github/actions/workflow/status/rickkoh/plainrepo/test.yml?branch=main&style=flat-square&logo=github&label=main"></a>
+  <a href="./LICENSE"><img alt="License" src="https://img.shields.io/badge/License-MIT-f5de53?style=flat-square&color=blue"></a>
+  <a href="https://github.com/rickkoh/plainrepo/releases"><img alt="Latest Release" src="https://img.shields.io/github/v/release/rickkoh/plainrepo?style=flat-square&color=blue&label=latest%20release"></a>
+</div>
+
 # PlainRepo
 
-PlainRepo is a desktop application that helps developers **select**, **view**, and **copy** the plain-text contents of any subset of files in a repository. It’s perfect for feeding **precise context** to large language models (LLMs), debugging, refactoring, and general code analysis.
+PlainRepo is a desktop application that helps developers **select**, **view**, and **copy** the plain-text contents of any subset of files in a repository. It's perfect for feeding **precise context** to large language models (LLMs), debugging, refactoring, and general code analysis.
 
 <p align="center">
   <img src="assets/appscreenshot.png" alt="PlainRepo Logo"/>
