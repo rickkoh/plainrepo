@@ -127,3 +127,6 @@ Performance:
   ✔ Improve performance for auto get tokens @done(25-01-26 23:48)
   ✔ Autosync should run concurrently and should update in real-time @done(25-05-15 21:11)
   ☐ Able to cancel "opening file" when autoSync is on
+
+CI/CD:
+  ☐ Test github actions @started(25-05-18 11:48)
