@@ -8,6 +8,7 @@ export const ipcChannels = {
 
   // Directory
   FILE_NODE_UPDATE: 'fileNode:update',
+  FILE_NODE_RESET: 'fileNode:reset',
   DIRECTORY_COLLAPSE: 'directory:collapse',
 
   FILE_NODE_SELECTION_CHANGED: 'fileNode:selectionChanged',

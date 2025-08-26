@@ -213,6 +213,32 @@ ipcMain.on('fileNode:select', (event, arg) => {
   }
 });
 
+ipcMain.on(ipcChannels.FILE_NODE_RESET, () => {
+  console.log('Resetting file node');
+
+  if (!mainWindow || !rootFileNode || !fileWatcherService) {
+    return;
+  }
+
+  const { selectedPaths: changes } = toggleFileNodeSelection(
+    rootFileNode,
+    rootFileNode.path,
+    false,
+  );
+  updateSelectedPaths(selectedPaths, changes);
+
+  mainWindow.webContents.send(ipcChannels.FILE_NODE_SELECTION_CHANGED, {
+    path: rootFileNode.path,
+    selected: false,
+  });
+
+  if (fileContentService) {
+    fileContentService.updateFileContents(rootFileNode, {
+      selectedOnly: true,
+    });
+  }
+});
+
 ipcMain.handle('search:files', async (event, arg) => {
   console.log('Searching for node', arg);
   if (!rootDirectory) {
