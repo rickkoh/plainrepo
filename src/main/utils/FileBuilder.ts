@@ -13,6 +13,22 @@ const fs = require('fs');
 const path = require('path');
 
 /**
+ * Read a directory's entries, returning an empty list if it can't be read
+ * (e.g. EPERM on protected folders on Windows or macOS)
+ *
+ * @param dirPath - The directory to read
+ * @returns The directory entries
+ */
+function readDirectory(dirPath: string): Dirent[] {
+  try {
+    return fs.readdirSync(dirPath, { withFileTypes: true });
+  } catch (error) {
+    console.error(`Unable to read directory ${dirPath}:`, error);
+    return [];
+  }
+}
+
+/**
  * Build the file node from the root directory
  *
  * @param dirPath - The root directory to build the file node from
@@ -45,7 +61,7 @@ export function buildFileNode(dirPath: string): FileNode {
   }
 
   function build(currentPath: string): FileNodes {
-    const entries = fs.readdirSync(currentPath, { withFileTypes: true });
+    const entries = readDirectory(currentPath);
 
     return entries
       .filter((entry: Dirent) => {
@@ -116,7 +132,7 @@ export function buildFileNodeSingleLevel(dirPath: string): FileNode {
     };
   }
 
-  const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+  const entries = readDirectory(dirPath);
 
   const children = entries
     .filter((entry: Dirent) => !shouldExclude(entry.name, excludeRegexes))

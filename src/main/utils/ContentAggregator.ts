@@ -25,22 +25,27 @@ export function getContent(
   transform?: (output: string) => string,
   maxSize?: number,
 ): string {
-  if (!fs.existsSync) {
+  if (!fs.existsSync(path)) {
     return '';
   }
 
-  const stats = fs.statSync(path);
+  try {
+    const stats = fs.statSync(path);
 
-  if (stats.isDirectory()) {
-    return '';
+    if (stats.isDirectory()) {
+      return '';
+    }
+
+    if (maxSize && stats.size > maxSize) {
+      return `File is too large to display (${stats.size} bytes)`;
+    }
+
+    const rawContent = fs.readFileSync(path, 'utf-8');
+    return transform ? transform(rawContent) : rawContent;
+  } catch (error: any) {
+    // e.g. EACCES, or EBUSY for files locked by another process on Windows
+    return `Unable to read file (${error.code || error.message})`;
   }
-
-  if (maxSize && stats.size > maxSize) {
-    return `File is too large to display (${stats.size} bytes)`;
-  }
-
-  const rawContent = fs.readFileSync(path, 'utf-8');
-  return transform ? transform(rawContent) : rawContent;
 }
 
 /**
