@@ -55,3 +55,8 @@ jobs:
       - name: Smoke test packaged app on Ubuntu
         if: matrix.os == 'ubuntu-latest'
         run: xvfb-run -a node .erb/scripts/smoke-test.js
+
+      - name: Smoke test Windows installer
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: ./.erb/scripts/smoke-test-installer.ps1
