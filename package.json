@@ -243,10 +243,14 @@
         }
       ]
     },
+    "afterPack": ".erb/scripts/adhoc-sign.js",
     "win": {
       "target": [
         "nsis"
       ]
+    },
+    "nsis": {
+      "artifactName": "${productName}-Setup-${version}.${ext}"
     },
     "linux": {
       "target": [

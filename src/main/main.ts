@@ -47,7 +47,9 @@ class AppUpdater {
   constructor() {
     log.transports.file.level = 'info';
     autoUpdater.logger = log;
-    autoUpdater.checkForUpdatesAndNotify();
+    autoUpdater.checkForUpdatesAndNotify().catch((error) => {
+      log.warn('Failed to check for updates:', error);
+    });
   }
 }
 
@@ -210,6 +212,32 @@ ipcMain.on('fileNode:select', (event, arg) => {
   // Update file contents using the service
   if (fileContentService) {
     fileContentService.updateFileContents(rootFileNode, { selectedOnly: true });
+  }
+});
+
+ipcMain.on(ipcChannels.FILE_NODE_RESET, () => {
+  console.log('Resetting file node');
+
+  if (!mainWindow || !rootFileNode || !fileWatcherService) {
+    return;
+  }
+
+  const { selectedPaths: changes } = toggleFileNodeSelection(
+    rootFileNode,
+    rootFileNode.path,
+    false,
+  );
+  updateSelectedPaths(selectedPaths, changes);
+
+  mainWindow.webContents.send(ipcChannels.FILE_NODE_SELECTION_CHANGED, {
+    path: rootFileNode.path,
+    selected: false,
+  });
+
+  if (fileContentService) {
+    fileContentService.updateFileContents(rootFileNode, {
+      selectedOnly: true,
+    });
   }
 });
 

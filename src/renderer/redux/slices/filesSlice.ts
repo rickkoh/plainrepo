@@ -76,13 +76,6 @@ const fileSlice = createSlice({
       toggleNodeSelection(state.fileNode, path, selected);
       toggleFlatFileNodeSelection(state.searchResults, path, selected);
     },
-    resetSelection(state) {
-      if (!state.fileNode) {
-        return;
-      }
-
-      toggleNodeSelection(state.fileNode, state.fileNode.path, false);
-    },
     setDirectoryTree(state, action: PayloadAction<string>) {
       state.directoryTree = action.payload;
     },
@@ -108,7 +101,6 @@ export const {
   setFileNode,
   updateFileNode,
   toggleFileNodeSelection,
-  resetSelection,
   setDirectoryTree,
   setSearchResults,
   setIsSearching,

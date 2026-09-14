@@ -185,12 +185,6 @@ export default class MenuBuilder {
             shell.openExternal('https://plainrepo.com/community');
           },
         },
-        {
-          label: 'Feature Request',
-          click() {
-            shell.openExternal('https://github.com/rickkoh/plainrepo/issues');
-          },
-        },
       ],
     };
 

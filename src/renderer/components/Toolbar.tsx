@@ -6,16 +6,14 @@ import { toast } from 'sonner';
 import TokenEstimator from '@/src/main/utils/TokenEstimator';
 import { CopyLimitSchema } from '@/src/types/AppSettings';
 
-import { useAppDispatch, useAppSelector } from '../redux/hooks';
+import { ipcChannels } from '@/src/shared/ipcChannels';
+import { useAppSelector } from '../redux/hooks';
 import { selectCopyLimit } from '../redux/selectors/appSelectors';
 import { selectFileContents } from '../redux/selectors/fileContentsSelectors';
 import { selectDirectoryTree } from '../redux/selectors/filesSelectors';
 import { selectTokenCount } from '../redux/selectors/statsSelectors';
-import { resetSelection } from '../redux/slices/filesSlice';
 
 export default function Toolbar() {
-  const dispatch = useAppDispatch();
-
   const copyLimit = useAppSelector(selectCopyLimit);
 
   const directoryTree = useAppSelector(selectDirectoryTree);
@@ -53,7 +51,9 @@ export default function Toolbar() {
       copy(content);
       toast('Copied everything');
     } else {
-      toast(`Token count exceeds limit of ${betterNumberFormat(copyLimit!)}`);
+      toast(
+        `Token count exceeds limit of ${betterNumberFormat(parsedCopyLimit)}`,
+      );
     }
     delayedHoverOn.cancel();
     setIsHovering(false);
@@ -73,7 +73,9 @@ export default function Toolbar() {
       copy(content);
       toast('Copied contents only');
     } else {
-      toast(`Token count exceeds limit of ${betterNumberFormat(copyLimit!)}`);
+      toast(
+        `Token count exceeds limit of ${betterNumberFormat(parsedCopyLimit)}`,
+      );
     }
     setIsHovering(false);
     delayedHoverOn.cancel();
@@ -91,7 +93,9 @@ export default function Toolbar() {
       copy(directoryTree);
       toast('Copied directory tree');
     } else {
-      toast(`Token count exceeds limit of ${betterNumberFormat(copyLimit!)}`);
+      toast(
+        `Token count exceeds limit of ${betterNumberFormat(parsedCopyLimit)}`,
+      );
     }
     setIsHovering(false);
     delayedHoverOn.cancel();
@@ -114,7 +118,10 @@ export default function Toolbar() {
             'hover:bg-destructive hover:text-background',
           )}
           onClick={() => {
-            dispatch(resetSelection());
+            window.electron.ipcRenderer.sendMessage(
+              ipcChannels.FILE_NODE_RESET,
+              {},
+            );
           }}
         >
           Reset

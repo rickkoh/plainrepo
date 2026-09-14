@@ -26,6 +26,14 @@ PlainRepo is a desktop application that helps developers **select**, **view**, a
 - **One-Click Copy** – Send your curated code context to any AI tool.
 - **Optimised Performance** – Handle reading thousands of files.
 
+## Download
+
+Download PlainRepo for macOS, Windows or Linux from the [latest release](https://github.com/rickkoh/plainrepo/releases/latest).
+
+- **macOS** – Download the `-arm64.dmg` for Apple Silicon or the other `.dmg` for Intel Macs. PlainRepo isn't notarized by Apple yet, so macOS blocks it the first time you open it. To allow it, go to **System Settings → Privacy & Security** and click **Open Anyway**.
+- **Windows** – Download `PlainRepo-Setup-<version>.exe`. If SmartScreen warns about an unrecognized app, click **More info → Run anyway**.
+- **Linux** – Download the `.AppImage`, make it executable, and run it.
+
 ## Getting Started
 
 1. **Clone the Repository**

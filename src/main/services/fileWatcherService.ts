@@ -167,6 +167,9 @@ export class FileWatcherService {
           excludePatterns.push(...getGitIgnorePatterns(dirPath));
         }
 
+        // Close the previous watcher for this path so re-selecting doesn't leak watchers
+        this.pathWatchers.get(dirPath)?.close();
+
         const pathWatcher = chokidar.watch(dirPath, {
           ignored: globToRegex(excludePatterns),
           persistent: true,

@@ -7,22 +7,30 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     strategy:
+      fail-fast: false
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
 
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Node.js and NPM
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
           cache: npm
+
+      # electron-builder's DMG step runs 'python', which macOS doesn't provide
+      - name: Install Python for DMG creation
+        if: matrix.os == 'macos-latest'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
       - name: npm install
         run: |
-          npm install
+          npm ci
 
       # Ubuntu-specific step to install additional dependencies
       - name: Install additional dependencies on Ubuntu
@@ -39,3 +47,11 @@ jobs:
           # Skip TypeScript checks in CI
           # npm exec tsc
           npm test
+
+      - name: Smoke test packaged app
+        if: matrix.os != 'ubuntu-latest'
+        run: node .erb/scripts/smoke-test.js
+
+      - name: Smoke test packaged app on Ubuntu
+        if: matrix.os == 'ubuntu-latest'
+        run: xvfb-run -a node .erb/scripts/smoke-test.js
