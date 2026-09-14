@@ -51,7 +51,9 @@ export default function Toolbar() {
       copy(content);
       toast('Copied everything');
     } else {
-      toast(`Token count exceeds limit of ${betterNumberFormat(copyLimit!)}`);
+      toast(
+        `Token count exceeds limit of ${betterNumberFormat(parsedCopyLimit)}`,
+      );
     }
     delayedHoverOn.cancel();
     setIsHovering(false);
@@ -71,7 +73,9 @@ export default function Toolbar() {
       copy(content);
       toast('Copied contents only');
     } else {
-      toast(`Token count exceeds limit of ${betterNumberFormat(copyLimit!)}`);
+      toast(
+        `Token count exceeds limit of ${betterNumberFormat(parsedCopyLimit)}`,
+      );
     }
     setIsHovering(false);
     delayedHoverOn.cancel();
@@ -89,7 +93,9 @@ export default function Toolbar() {
       copy(directoryTree);
       toast('Copied directory tree');
     } else {
-      toast(`Token count exceeds limit of ${betterNumberFormat(copyLimit!)}`);
+      toast(
+        `Token count exceeds limit of ${betterNumberFormat(parsedCopyLimit)}`,
+      );
     }
     setIsHovering(false);
     delayedHoverOn.cancel();
